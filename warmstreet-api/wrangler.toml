@@ -1,0 +1,25 @@
+name = "warmstreet-api"
+compatibility_date = "2024-07-01"
+
+# secrets:
+# NEON_DATABASE_URL
+# NEON_AUTH_JWKS_URL
+# TIGRIS_ACCESS_KEY_ID
+# TIGRIS_SECRET_ACCESS_KEY
+# TIGRIS_BUCKET
+# TIGRIS_ENDPOINT
+# FIREBASE_PROJECT_ID
+# FIREBASE_CLIENT_EMAIL
+# FIREBASE_PRIVATE_KEY
+# GOOGLE_SERVICE_ACCOUNT_JSON
+# GEMINI_API_KEY
+
+[observability]
+enabled = true
+
+[vars]
+NEON_AUTH_JWKS_URL = "https://ep-snowy-king-a10mlrl6.neonauth.ap-southeast-1.aws.neon.tech/neondb/auth/.well-known/jwks.json"
+
+# Daily media cleanup at 03:00 UTC
+[triggers]
+crons = ["0 3 * * *"]

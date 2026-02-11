@@ -1,0 +1,57 @@
+{
+  "name": "warmstreet-worker",
+  "version": "1.0.0",
+  "description": "WarmStreet Media Orchestrator Worker - S3 Presigned URL Generation",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:local": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "cf-typegen": "wrangler types",
+    "prepare": "npm run cf-typegen"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "0.9.0",
+    "hono": "4.3.7",
+    "jose": "5.3.0",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.1.17",
+    "@cloudflare/workers-types": "4.20240512.0",
+    "@types/node": "20.12.12",
+    "@typescript-eslint/eslint-plugin": "7.9.0",
+    "@typescript-eslint/parser": "7.9.0",
+    "@vitest/coverage-v8": "1.6.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "9.1.0",
+    "prettier": "3.2.5",
+    "typescript": "5.4.5",
+    "vitest": "1.6.0",
+    "wrangler": "3.57.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "s3",
+    "presigned-url",
+    "tigris",
+    "rescue",
+    "media"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}

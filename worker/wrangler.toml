@@ -1,0 +1,37 @@
+name = "warmstreet-worker"
+main = "src/index.ts"
+compatibility_date = "2024-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+[env.staging]
+name = "warmstreet-worker-staging"
+vars = { ALLOWED_ORIGINS = "https://staging.warmstreet.app" }
+
+[[env.staging.kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+[env.production]
+name = "warmstreet-worker-production"
+vars = { ALLOWED_ORIGINS = "https://warmstreet.app,https://www.warmstreet.app" }
+
+[[env.production.kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Secrets to configure via CLI:
+# wrangler secret put TIGRIS_BUCKET
+# wrangler secret put AWS_ACCESS_KEY_ID
+# wrangler secret put AWS_SECRET_ACCESS_KEY
+# wrangler secret put AWS_ENDPOINT_URL_S3
+# wrangler secret put AWS_REGION
+# wrangler secret put JWT_SECRET
+# wrangler secret put INTERNAL_API_URL
+# wrangler secret put INTERNAL_API_KEY

@@ -1,0 +1,1785 @@
+    Checking shared v0.1.0 (/Users/rezwanurrahmanlabib/WarmStreet/shared)
+error: capabilities should be generic over a single event type
+  --> src/capabilities/mod.rs:39:10
+   |
+39 | ...ve(crux_core::macros::Effect)]
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in the derive macro `crux_core::macros::Effect` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `self` parameter is only allowed in associated functions
+   --> src/lib.rs:158:22
+    |
+158 | ...re(&self, model...
+    |       ^^^^^ not semantically valid as function parameter
+    |
+    = note: associated functions are those in `impl` or `trait` definitions
+
+error[E0432]: unresolved import `capabilities::Effect`
+  --> src/lib.rs:11:9
+   |
+11 | ...se capabilities::Effect;
+   |       ^^^^^^^^^^^^^^^^^^^^ no `Effect` in `capabilities`
+   |
+help: consider importing this trait instead
+   |
+11 - pub use capabilities::Effect;
+11 + pub use crux_core::Effect;
+   |
+
+error[E0432]: unresolved import `rand`
+ --> src/outbox.rs:6:5
+  |
+6 | use rand::Rng;
+  |     ^^^^ use of unresolved module or unlinked crate `rand`
+  |
+  = help: if you wanted to use a crate named `rand`, use `cargo add rand` to add it to your `Cargo.toml`
+
+error[E0432]: unresolved import `outbox::RetryState`
+   --> src/lib.rs:108:80
+    |
+108 | ...r, RetryState};
+    |       ^^^^^^^^^^
+    |       |
+    |       no `RetryState` in `outbox`
+    |       help: a similar name exists in the module: `EntryState`
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `async_trait`
+   --> src/outbox.rs:356:3
+    |
+356 | #[async_trait::asy...
+    |   ^^^^^^^^^^^ use of unresolved module or unlinked crate `async_trait`
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `async_trait`
+   --> src/outbox.rs:382:3
+    |
+382 | #[async_trait::asy...
+    |   ^^^^^^^^^^^ use of unresolved module or unlinked crate `async_trait`
+
+error[E0425]: cannot find function `push_entry` in module `crate::outbox`
+  --> src/offline_store.rs:52:24
+   |
+52 | ...x::push_entry(&m...
+   |       ^^^^^^^^^^ not found in `crate::outbox`
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+   --> src/lib.rs:327:25
+    |
+327 | ...   OpId(op_id.c...
+    |       ^^^^
+    |
+note: constructor is not visible here due to private fields
+   --> src/outbox.rs:11:17
+    |
+ 11 | ...Id(String);
+    |       ^^^^^^ private field
+note: tuple struct `crate::event::OpId` exists but is inaccessible
+   --> src/event.rs:39:9
+    |
+ 39 |         pub struct $name(String);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
+...
+ 60 | typed_id!(OpId);
+    | --------------- in this macro invocation
+    = note: this error originates in the macro `typed_id` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider making the field publicly accessible
+   --> src/outbox.rs:11:17
+    |
+ 11 | pub struct OpId(pub String);
+    |                 +++
+
+error[E0425]: cannot find function `mark_completed` in module `crate::outbox`
+   --> src/lib.rs:362:36
+    |
+362 | ...x::mark_completed(&m...
+    |       ^^^^^^^^^^^^^^ not found in `crate::outbox`
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+   --> src/lib.rs:362:85
+    |
+362 | ...ox, &OpId(op_id...
+    |         ^^^^
+    |
+note: constructor is not visible here due to private fields
+   --> src/outbox.rs:11:17
+    |
+ 11 | ...Id(String);
+    |       ^^^^^^ private field
+note: tuple struct `crate::event::OpId` exists but is inaccessible
+   --> src/event.rs:39:9
+    |
+ 39 |         pub struct $name(String);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^ not accessible
+...
+ 60 | typed_id!(OpId);
+    | --------------- in this macro invocation
+    = note: this error originates in the macro `typed_id` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider making the field publicly accessible
+   --> src/outbox.rs:11:17
+    |
+ 11 | pub struct OpId(pub String);
+    |                 +++
+
+error[E0574]: expected struct, variant or union type, found enum `OutboxError`
+   --> src/lib.rs:377:29
+    |
+377 | ...   OutboxError { ...
+    |       ^^^^^^^^^^^ not a struct, variant or union type
+
+warning: unused import: `collections::VecDeque`
+ --> src/model.rs:2:11
+  |
+2 | ...::{collections::VecDeque, f...
+  |       ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crux_core::render::Render`
+ --> src/capabilities/render.rs:1:9
+  |
+1 | ...se crux_core::render::Render;
+  |       ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `HttpRequest` and `HttpResponse`
+   --> src/lib.rs:110:31
+    |
+110 | ...::{HttpRequest, HttpResponse};
+    |       ^^^^^^^^^^^  ^^^^^^^^^^^^
+
+warning: use of deprecated type alias `image::io::Reader`: this type has been moved and renamed to image::ImageReader
+   --> src/vision.rs:276:33
+    |
+276 | ...io::Reader::new...
+    |        ^^^^^^
+    |
+    = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated type alias `image::io::Reader`: this type has been moved and renamed to image::ImageReader
+ --> src/image_processing.rs:6:16
+  |
+6 | ...:io::Reader as Im...
+  |         ^^^^^^
+
+warning: use of deprecated type alias `image::io::Reader`: this type has been moved and renamed to image::ImageReader
+   --> src/image_processing.rs:373:18
+    |
+373 | ... = ImageReader::n...
+    |       ^^^^^^^^^^^
+
+warning: use of deprecated type alias `image::io::Reader`: this type has been moved and renamed to image::ImageReader
+   --> src/image_processing.rs:387:22
+    |
+387 | ... = ImageReader::n...
+    |       ^^^^^^^^^^^
+
+error[E0277]: the trait bound `CameraOperation: Operation` is not satisfied
+   --> src/capabilities/camera.rs:9:14
+    |
+  9 | ...t: CapabilityContext<CameraOperation, E>,
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CameraOperation`
+   --> src/capabilities/camera.rs:42:1
+    |
+ 42 | pub enum CameraOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CameraOperation: Operation` is not satisfied
+   --> src/capabilities/camera.rs:13:22
+    |
+ 13 | ... = CameraOperation;
+    |       ^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CameraOperation`
+   --> src/capabilities/camera.rs:42:1
+    |
+ 42 | pub enum CameraOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `crux_core::Capability::Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:286:21
+    |
+286 | ...n: Operation;
+    |       ^^^^^^^^^ required by this bound in `Capability::Operation`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0276]: impl has stricter requirements than trait
+  --> src/capabilities/camera.rs:18:44
+   |
+18 | ...nc + Copy + 'sta...
+   |         ^^^^ impl has extra requirement `F: std::marker::Copy`
+
+error[E0277]: the trait bound `PushOperation: Operation` is not satisfied
+   --> src/capabilities/push.rs:9:14
+    |
+  9 | ...t: CapabilityContext<PushOperation, E>,
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `PushOperation`
+   --> src/capabilities/push.rs:42:1
+    |
+ 42 | pub enum PushOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `PushOperation: Operation` is not satisfied
+   --> src/capabilities/push.rs:13:22
+    |
+ 13 | ... = PushOperation;
+    |       ^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `PushOperation`
+   --> src/capabilities/push.rs:42:1
+    |
+ 42 | pub enum PushOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `crux_core::Capability::Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:286:21
+    |
+286 | ...n: Operation;
+    |       ^^^^^^^^^ required by this bound in `Capability::Operation`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0276]: impl has stricter requirements than trait
+  --> src/capabilities/push.rs:18:44
+   |
+18 | ...nc + Copy + 'sta...
+   |         ^^^^ impl has extra requirement `F: std::marker::Copy`
+
+error[E0277]: the trait bound `CryptoOperation: Operation` is not satisfied
+   --> src/capabilities/crypto.rs:9:14
+    |
+  9 | ...t: CapabilityContext<CryptoOperation, E>,
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CryptoOperation`
+   --> src/capabilities/crypto.rs:49:1
+    |
+ 49 | pub enum CryptoOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CryptoOperation: Operation` is not satisfied
+   --> src/capabilities/crypto.rs:13:22
+    |
+ 13 | ... = CryptoOperation;
+    |       ^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CryptoOperation`
+   --> src/capabilities/crypto.rs:49:1
+    |
+ 49 | pub enum CryptoOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `crux_core::Capability::Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:286:21
+    |
+286 | ...n: Operation;
+    |       ^^^^^^^^^ required by this bound in `Capability::Operation`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0276]: impl has stricter requirements than trait
+  --> src/capabilities/crypto.rs:18:44
+   |
+18 | ...nc + Copy + 'sta...
+   |         ^^^^ impl has extra requirement `F: std::marker::Copy`
+
+error[E0277]: the trait bound `Model: Default` is not satisfied
+   --> src/lib.rs:176:22
+    |
+176 | ... = AppModel;
+    |       ^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `std::default::Default` is not implemented for `model::Model`
+note: required by a bound in `crux_core::App::Model`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/lib.rs:177:17
+    |
+177 | ...l: Default;
+    |       ^^^^^^^ required by this bound in `App::Model`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-6973984839584444855.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: consider annotating `model::Model` with `#[derive(Default)]`
+   --> src/model.rs:138:1
+    |
+138 + #[derive(Default)]
+139 | pub struct Model {
+    |
+
+error[E0277]: the trait bound `CameraOperation: Operation` is not satisfied
+   --> src/capabilities/camera.rs:27:25
+    |
+ 27 | ...t: CapabilityContext<CameraOperation, E>) -...
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CameraOperation`
+   --> src/capabilities/camera.rs:42:1
+    |
+ 42 | pub enum CameraOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `PushOperation: Operation` is not satisfied
+   --> src/capabilities/push.rs:27:25
+    |
+ 27 | ...t: CapabilityContext<PushOperation, E>) -...
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `PushOperation`
+   --> src/capabilities/push.rs:42:1
+    |
+ 42 | pub enum PushOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CryptoOperation: Operation` is not satisfied
+   --> src/capabilities/crypto.rs:27:25
+    |
+ 27 | ...t: CapabilityContext<CryptoOperation, E>) -...
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CryptoOperation`
+   --> src/capabilities/crypto.rs:49:1
+    |
+ 49 | pub enum CryptoOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: `CapabilityContext<..., ...>` doesn't implement `Debug`
+ --> src/capabilities/camera.rs:9:5
+  |
+7 | #[derive(Debug, Clone)]
+  |          ----- in this derive macro expansion
+8 | pub struct Camera<E> {
+9 |     context: CapabilityContext<CameraOperation, E>,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+  |
+  = help: the trait `Debug` is not implemented for `CapabilityContext<..., ...>`
+  = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-8229971840433518635.txt'
+  = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CameraOperation: Operation` is not satisfied
+   --> src/capabilities/camera.rs:9:5
+    |
+  7 | #[derive(Debug, Clone)]
+    |                 ----- in this derive macro expansion
+  8 | pub struct Camera<E> {
+  9 |     c...Operation, E>,
+    |     ^...^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CameraOperation`
+   --> src/capabilities/camera.rs:42:1
+    |
+ 42 | pub enum CameraOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CameraOperation: Operation` is not satisfied
+   --> src/capabilities/camera.rs:22:21
+    |
+ 22 | ...ew(self.context.map_event(f))
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CameraOperation`
+   --> src/capabilities/camera.rs:42:1
+    |
+ 42 | pub enum CameraOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `map_event` exists for struct `CapabilityContext<..., ...>`, but its trait bounds were not satisfied
+   --> src/capabilities/camera.rs:22:34
+    |
+ 22 |         Camera::new(self.context.map_event(f))
+    |                                  ^^^^^^^^^ method cannot be called on `CapabilityContext<..., ...>` due to unsatisfied trait bounds
+...
+ 42 | pub enum CameraOperation {
+    | ------------------------ doesn't satisfy `CameraOperation: Operation`
+    |
+    = note: the following trait bounds were not satisfied:
+            `CameraOperation: Operation`
+note: the trait `Operation` must be implemented
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-419404474772109301.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CameraOperation: Operation` is not satisfied
+   --> src/capabilities/camera.rs:28:16
+    |
+ 28 | ... { context }
+    |       ^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CameraOperation`
+   --> src/capabilities/camera.rs:42:1
+    |
+ 42 | pub enum CameraOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `request_from_shell` exists for struct `CapabilityContext<..., ...>`, but its trait bounds were not satisfied
+   --> src/capabilities/camera.rs:35:22
+    |
+ 35 |         self.context.request_from_shell(Ca...
+    |                      ^^^^^^^^^^^^^^^^^^ method cannot be called on `CapabilityContext<..., ...>` due to unsatisfied trait bounds
+...
+ 42 | pub enum CameraOperation {
+    | ------------------------ doesn't satisfy `CameraOperation: Operation`
+    |
+    = note: the following trait bounds were not satisfied:
+            `CameraOperation: Operation`
+note: the trait `Operation` must be implemented
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-8229971840433518635.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: `CapabilityContext<..., ...>` doesn't implement `Debug`
+ --> src/capabilities/push.rs:9:5
+  |
+7 | #[derive(Debug, Clone)]
+  |          ----- in this derive macro expansion
+8 | pub struct Push<E> {
+9 |     context: CapabilityContext<PushOperation, E>,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+  |
+  = help: the trait `Debug` is not implemented for `CapabilityContext<..., ...>`
+  = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-117448307552964262.txt'
+  = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `PushOperation: Operation` is not satisfied
+   --> src/capabilities/push.rs:9:5
+    |
+  7 | #[derive(Debug, Clone)]
+    |                 ----- in this derive macro expansion
+  8 | pub struct Push<E> {
+  9 |     c...Operation, E>,
+    |     ^...^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `PushOperation`
+   --> src/capabilities/push.rs:42:1
+    |
+ 42 | pub enum PushOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `PushOperation: Operation` is not satisfied
+   --> src/capabilities/push.rs:22:19
+    |
+ 22 | ...ew(self.context.map_event(f))
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `PushOperation`
+   --> src/capabilities/push.rs:42:1
+    |
+ 42 | pub enum PushOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `map_event` exists for struct `CapabilityContext<..., ...>`, but its trait bounds were not satisfied
+   --> src/capabilities/push.rs:22:32
+    |
+ 22 |         Push::new(self.context.map_event(f))
+    |                                ^^^^^^^^^ method cannot be called on `CapabilityContext<..., ...>` due to unsatisfied trait bounds
+...
+ 42 | pub enum PushOperation {
+    | ---------------------- doesn't satisfy `PushOperation: Operation`
+    |
+    = note: the following trait bounds were not satisfied:
+            `PushOperation: Operation`
+note: the trait `Operation` must be implemented
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-11319429209496168114.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `PushOperation: Operation` is not satisfied
+   --> src/capabilities/push.rs:28:16
+    |
+ 28 | ... { context }
+    |       ^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `PushOperation`
+   --> src/capabilities/push.rs:42:1
+    |
+ 42 | pub enum PushOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `request_from_shell` exists for struct `CapabilityContext<..., ...>`, but its trait bounds were not satisfied
+   --> src/capabilities/push.rs:35:22
+    |
+ 35 |         self.context.request_from_shell(Pu...
+    |                      ^^^^^^^^^^^^^^^^^^ method cannot be called on `CapabilityContext<..., ...>` due to unsatisfied trait bounds
+...
+ 42 | pub enum PushOperation {
+    | ---------------------- doesn't satisfy `PushOperation: Operation`
+    |
+    = note: the following trait bounds were not satisfied:
+            `PushOperation: Operation`
+note: the trait `Operation` must be implemented
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-117448307552964262.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: `CapabilityContext<..., ...>` doesn't implement `Debug`
+ --> src/capabilities/crypto.rs:9:5
+  |
+7 | #[derive(Debug, Clone)]
+  |          ----- in this derive macro expansion
+8 | pub struct Crypto<E> {
+9 |     context: CapabilityContext<CryptoOperation, E>,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+  |
+  = help: the trait `Debug` is not implemented for `CapabilityContext<..., ...>`
+  = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-7586556980765954033.txt'
+  = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CryptoOperation: Operation` is not satisfied
+   --> src/capabilities/crypto.rs:9:5
+    |
+  7 | #[derive(Debug, Clone)]
+    |                 ----- in this derive macro expansion
+  8 | pub struct Crypto<E> {
+  9 |     c...Operation, E>,
+    |     ^...^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CryptoOperation`
+   --> src/capabilities/crypto.rs:49:1
+    |
+ 49 | pub enum CryptoOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CryptoOperation: Operation` is not satisfied
+   --> src/capabilities/crypto.rs:22:21
+    |
+ 22 | ...ew(self.context.map_event(f))
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CryptoOperation`
+   --> src/capabilities/crypto.rs:49:1
+    |
+ 49 | pub enum CryptoOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `map_event` exists for struct `CapabilityContext<..., ...>`, but its trait bounds were not satisfied
+   --> src/capabilities/crypto.rs:22:34
+    |
+ 22 |         Crypto::new(self.context.map_event(f))
+    |                                  ^^^^^^^^^ method cannot be called on `CapabilityContext<..., ...>` due to unsatisfied trait bounds
+...
+ 49 | pub enum CryptoOperation {
+    | ------------------------ doesn't satisfy `CryptoOperation: Operation`
+    |
+    = note: the following trait bounds were not satisfied:
+            `CryptoOperation: Operation`
+note: the trait `Operation` must be implemented
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-1239692805072425773.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `CryptoOperation: Operation` is not satisfied
+   --> src/capabilities/crypto.rs:28:16
+    |
+ 28 | ... { context }
+    |       ^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `Operation` is not implemented for `CryptoOperation`
+   --> src/capabilities/crypto.rs:49:1
+    |
+ 49 | pub enum CryptoOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+note: there are multiple different versions of crate `crux_core` in the dependency graph
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^ this is the expected trait
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.8.1/src/capability/mod.rs:215:1
+    |
+215 | p...end + 'static {
+    | -...------------- this is the trait that was imported
+    = help: you can use `cargo tree` to explore your dependency tree
+help: the following other types implement trait `Operation`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:246:1
+    |
+246 | impl Operation for Never {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^ `Never`
+    |
+   ::: /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capabilities/render.rs:33:1
+    |
+ 33 | impl Operation for RenderOperation {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `RenderOperation`
+note: required by a bound in `CapabilityContext`
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:403:9
+    |
+401 | ...truct CapabilityContext<Op...
+    |          ----------------- required by a bound in this struct
+402 | ...
+403 | ...p: Operation,
+    |       ^^^^^^^^^ required by this bound in `CapabilityContext`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-2160960293568160689.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `request_from_shell` exists for struct `CapabilityContext<..., ...>`, but its trait bounds were not satisfied
+   --> src/capabilities/crypto.rs:35:22
+    |
+ 35 |         self.context.request_from_shell(Cr...
+    |                      ^^^^^^^^^^^^^^^^^^ method cannot be called on `CapabilityContext<..., ...>` due to unsatisfied trait bounds
+...
+ 49 | pub enum CryptoOperation {
+    | ------------------------ doesn't satisfy `CryptoOperation: Operation`
+    |
+    = note: the following trait bounds were not satisfied:
+            `CryptoOperation: Operation`
+note: the trait `Operation` must be implemented
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-7586556980765954033.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `request_from_shell` exists for struct `CapabilityContext<..., ...>`, but its trait bounds were not satisfied
+   --> src/capabilities/crypto.rs:42:22
+    |
+ 42 |         self.context.request_from_shell(Cr...
+    |                      ^^^^^^^^^^^^^^^^^^ method cannot be called on `CapabilityContext<..., ...>` due to unsatisfied trait bounds
+...
+ 49 | pub enum CryptoOperation {
+    | ------------------------ doesn't satisfy `CryptoOperation: Operation`
+    |
+    = note: the following trait bounds were not satisfied:
+            `CryptoOperation: Operation`
+note: the trait `Operation` must be implemented
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.7.6/src/capability/mod.rs:216:1
+    |
+216 | p...end + 'static {
+    | ^...^^^^^^^^^^^^^
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-7586556980765954033.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `rand`
+   --> src/outbox.rs:649:23
+    |
+649 | ...ng = rand::thre...
+    |         ^^^^ use of unresolved module or unlinked crate `rand`
+    |
+    = help: if you wanted to use a crate named `rand`, use `cargo add rand` to add it to your `Cargo.toml`
+
+error[E0616]: field `inputs` of struct `Session` is private
+   --> src/vision.rs:183:29
+    |
+183 | ...on.inputs.first...
+    |       ^^^^^^ private field
+    |
+help: a method `inputs` also exists, call it with parentheses
+    |
+183 |         let input = session.inputs().first().ok_or_else(|| {
+    |                                   ++
+
+error[E0616]: field `outputs` of struct `Session` is private
+   --> src/vision.rs:211:30
+    |
+211 | ...on.outputs.firs...
+    |       ^^^^^^^ private field
+    |
+help: a method `outputs` also exists, call it with parentheses
+    |
+211 |         let output = session.outputs().first().ok_or_else(|| {
+    |                                     ++
+
+error[E0631]: type mismatch in function arguments
+   --> src/vision.rs:278:22
+    |
+ 52 |     Decode(#[source] image::ImageError),
+    |     ------ found signature defined here
+...
+278 |             .map_err(VisionError::Decode)?;
+    |              ------- ^^^^^^^^^^^^^^^^^^^ expected due to this
+    |              |
+    |              required by a bound introduced by this call
+    |
+    = note: expected function signature `fn(std::io::Error) -> _`
+               found function signature `fn(ImageError) -> _`
+note: required by a bound in `Result::<T, E>::map_err`
+   --> /private/tmp/rust-20260123-8344-1t53h/rustc-1.93.0-src/library/core/src/result.rs:962:5
+help: consider wrapping the function in a closure
+    |
+278 |             .map_err(|arg0: std::io::Error| VisionError::Decode(/* ImageError */))?;
+    |                      ++++++++++++++++++++++                    ++++++++++++++++++
+
+error[E0599]: no variant or associated item named `None` found for enum `event::Event` in the current scope
+   --> src/lib.rs:167:31
+    |
+167 | ...ent::None
+    |         ^^^^ variant or associated item not found in `event::Event`
+    |
+   ::: src/event.rs:250:1
+    |
+250 | pub enum Event {
+    | -------------- variant or associated item `None` not found for this enum
+    |
+help: there is a method `ne` with a similar name
+   --> /private/tmp/rust-20260123-8344-1t53h/rustc-1.93.0-src/library/core/src/cmp.rs:264:5
+
+error[E0599]: no variant or associated item named `None` found for enum `event::Event` in the current scope
+   --> src/lib.rs:169:32
+    |
+169 | ...ent::None,
+    |         ^^^^ variant or associated item not found in `event::Event`
+    |
+   ::: src/event.rs:250:1
+    |
+250 | pub enum Event {
+    | -------------- variant or associated item `None` not found for this enum
+    |
+help: there is a method `ne` with a similar name
+   --> /private/tmp/rust-20260123-8344-1t53h/rustc-1.93.0-src/library/core/src/cmp.rs:264:5
+
+error[E0026]: variant `event::Event::LocationPermissionGranted` does not have fields named `lat`, `lng`
+   --> src/lib.rs:192:55
+    |
+192 | ... { lat, lng } |
+    |       ^^^  ^^^ variant `event::Event::LocationPermissionGranted` does not have these fields
+
+error[E0027]: pattern does not mention field `location`
+   --> src/lib.rs:192:17
+    |
+192 | ...   AppEvent::L...g } |
+    |       ^^^^^^^^^^^...^^^ missing field `location`
+    |
+help: include the missing field in the pattern
+    |
+192 |                 AppEvent::LocationPermissionGranted { lat, lng, location } |
+    |                                                               ++++++++++
+help: if you don't care about this missing field, you can explicitly ignore it
+    |
+192 |                 AppEvent::LocationPermissionGranted { lat, lng, location: _ } |
+    |                                                               +++++++++++++
+help: or always ignore missing fields here
+    |
+192 |                 AppEvent::LocationPermissionGranted { lat, lng, .. } |
+    |                                                               ++++
+
+error[E0026]: variant `event::Event::LocationPinDropped` does not have fields named `lat`, `lng`
+   --> src/lib.rs:193:48
+    |
+193 | ... { lat, lng } => {
+    |       ^^^  ^^^ variant `event::Event::LocationPinDropped` does not have these fields
+
+error[E0027]: pattern does not mention field `location`
+   --> src/lib.rs:193:17
+    |
+193 | ...   AppEvent::LocationPinDropped { lat, lng } => {
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing field `location`
+    |
+help: include the missing field in the pattern
+    |
+193 |                 AppEvent::LocationPinDropped { lat, lng, location } => {
+    |                                                        ++++++++++
+help: if you don't care about this missing field, you can explicitly ignore it
+    |
+193 |                 AppEvent::LocationPinDropped { lat, lng, location: _ } => {
+    |                                                        +++++++++++++
+help: or always ignore missing fields here
+    |
+193 |                 AppEvent::LocationPinDropped { lat, lng, .. } => {
+    |                                                        ++++
+
+error[E0599]: no variant or associated item named `PushReceived` found for enum `event::Event` in the current scope
+   --> src/lib.rs:482:27
+    |
+482 | ...t::PushReceived(pa...
+    |       ^^^^^^^^^^^^ variant or associated item not found in `event::Event`
+    |
+   ::: src/event.rs:250:1
+    |
+250 | pub enum Event {
+    | -------------- variant or associated item `PushReceived` not found for this enum
+
+error[E0308]: mismatched types
+   --> src/lib.rs:189:63
+    |
+189 | ...me(crate::model::UserId(user_id));
+    |       -------------------- ^^^^^^^ expected `String`, found `UserId`
+    |       |
+    |       arguments to this struct are incorrect
+    |
+note: tuple struct defined here
+   --> src/model.rs:10:12
+    |
+ 10 | ...uct UserId(pub ...
+    |        ^^^^^^
+help: try using a conversion method
+    |
+189 |                     model.user_id = Some(crate::model::UserId(user_id.to_string()));
+    |                                                                      ++++++++++++
+
+error[E0308]: mismatched types
+   --> src/lib.rs:309:35
+    |
+309 | ...n: payload.location,
+    |       ^^^^^^^^^^^^^^^^ expected `LatLon`, found `Coordinate`
+
+error[E0308]: mismatched types
+   --> src/lib.rs:310:38
+    |
+310 | ...n: payload.description.clone(),
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Option<String>`, found `Option<BoundedText<4096>>`
+    |
+    = note: expected enum `std::option::Option<std::string::String>`
+               found enum `std::option::Option<BoundedText<4096>>`
+
+error[E0308]: mismatched types
+   --> src/lib.rs:311:41
+    |
+311 | ...y: payload.wound_severity.map(|s| s as u8),
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Option<WoundSeverity>`, found `Option<u8>`
+    |
+    = note: expected enum `std::option::Option<outbox::WoundSeverity>`
+               found enum `std::option::Option<u8>`
+
+error[E0308]: mismatched types
+   --> src/lib.rs:317:35
+    |
+317 | ...n: payload.location,
+    |       ^^^^^^^^^^^^^^^^ expected `LatLon`, found `Coordinate`
+
+error[E0308]: mismatched types
+   --> src/lib.rs:318:38
+    |
+318 | ...n: payload.description.clone(),
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Option<String>`, found `Option<BoundedText<4096>>`
+    |
+    = note: expected enum `std::option::Option<std::string::String>`
+               found enum `std::option::Option<BoundedText<4096>>`
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+   --> src/lib.rs:328:25
+    |
+328 | ...   IdempotencyKey(id...
+    |       ^^^^^^^^^^^^^^
+    |
+note: constructor is not visible here due to private fields
+   --> src/outbox.rs:40:27
+    |
+ 40 | ...ey(String);
+    |       ^^^^^^ private field
+help: consider making the field publicly accessible
+   --> src/outbox.rs:40:27
+    |
+ 40 | pub struct IdempotencyKey(pub String);
+    |                           +++
+help: a local variable with a similar name exists
+    |
+328 -                         IdempotencyKey(idempotency_key.clone()),
+328 +                         idempotency_key(idempotency_key.clone()),
+    |
+
+error[E0061]: this function takes 5 arguments but 4 arguments were supplied
+   --> src/lib.rs:326:33
+    |
+326 |                       let entry = OutboxEntry::new(
+    |  _________________________________^^^^^^^^^^^^^^^^-
+327 | |                         OpId(op_id.clone()),
+328 | |                         IdempotencyKey(idempotency_k...
+329 | |                         intent,
+330 | |                         crate::model::UnixTimeMs(now...
+331 | |                     );
+    | |_____________________- argument #5 of type `u64` is missing
+    |
+note: associated function defined here
+   --> src/outbox.rs:268:12
+    |
+268 |     pub fn new(
+    |            ^^^
+...
+273 |         ttl_ms: u64,
+    |         -----------
+help: provide the argument
+    |
+326 |                     let entry = OutboxEntry::new(
+...
+330 |                         crate::model::UnixTimeMs(now_ms),
+331 ~                         /* u64 */,
+332 ~                     );
+    |
+
+error[E0599]: no method named `persist_store` found for reference `&app::App` in the current scope
+   --> src/lib.rs:336:26
+    |
+336 | ...lf.persist_store(mo...
+    |       ^^^^^^^^^^^^^ method not found in `&app::App`
+
+error[E0609]: no field `0` on type `Coordinate`
+   --> src/lib.rs:338:90
+    |
+338 | ...tion.0, lon: pa...
+    |         ^ unknown field
+
+error[E0609]: no field `1` on type `Coordinate`
+   --> src/lib.rs:338:115
+    |
+338 | ...tion.1 });
+    |         ^ unknown field
+
+error[E0277]: can't compare `String` with `LocalId`
+   --> src/lib.rs:347:114
+    |
+347 | ...id.0 == local_i...
+    |         ^^ no implementation for `String == LocalId`
+    |
+    = help: the trait `PartialEq<LocalId>` is not implemented for `String`
+    = help: the following other types implement trait `PartialEq<Rhs>`:
+              `String` implements `PartialEq<&str>`
+              `String` implements `PartialEq<ByteStr>`
+              `String` implements `PartialEq<ByteString>`
+              `String` implements `PartialEq<Cow<'_, str>>`
+              `String` implements `PartialEq<Path>`
+              `String` implements `PartialEq<PathBuf>`
+              `String` implements `PartialEq<Bytes>`
+              `String` implements `PartialEq<BytesMut>`
+            and 3 others
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-10948023926815317347.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+   --> src/lib.rs:348:55
+    |
+348 | ... = Some(original_url);
+    |       ---- ^^^^^^^^^^^^ expected `String`, found `ValidatedUrl`
+    |       |
+    |       arguments to this enum variant are incorrect
+    |
+help: the type constructed contains `ValidatedUrl` due to the type of the argument passed
+   --> src/lib.rs:348:50
+    |
+348 | ... = Some(original_url);
+    |       ^^^^^------------^
+    |            |
+    |            this argument influences the type of `Some`
+note: tuple variant defined here
+   --> /private/tmp/rust-20260123-8344-1t53h/rustc-1.93.0-src/library/core/src/option.rs:608:5
+
+error[E0277]: can't compare `String` with `LocalId`
+   --> src/lib.rs:353:114
+    |
+353 | ...id.0 == local_i...
+    |         ^^ no implementation for `String == LocalId`
+    |
+    = help: the trait `PartialEq<LocalId>` is not implemented for `String`
+    = help: the following other types implement trait `PartialEq<Rhs>`:
+              `String` implements `PartialEq<&str>`
+              `String` implements `PartialEq<ByteStr>`
+              `String` implements `PartialEq<ByteString>`
+              `String` implements `PartialEq<Cow<'_, str>>`
+              `String` implements `PartialEq<Path>`
+              `String` implements `PartialEq<PathBuf>`
+              `String` implements `PartialEq<Bytes>`
+              `String` implements `PartialEq<BytesMut>`
+            and 3 others
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-10948023926815317347.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: no method named `persist_store` found for reference `&app::App` in the current scope
+   --> src/lib.rs:356:26
+    |
+356 | ...lf.persist_store(mo...
+    |       ^^^^^^^^^^^^^ method not found in `&app::App`
+
+error[E0277]: can't compare `String` with `event::OpId`
+   --> src/lib.rs:363:114
+    |
+363 | ...id.0 == op_id) {
+    |         ^^ no implementation for `String == event::OpId`
+    |
+    = help: the trait `PartialEq<event::OpId>` is not implemented for `String`
+    = help: the following other types implement trait `PartialEq<Rhs>`:
+              `String` implements `PartialEq<&str>`
+              `String` implements `PartialEq<ByteStr>`
+              `String` implements `PartialEq<ByteString>`
+              `String` implements `PartialEq<Cow<'_, str>>`
+              `String` implements `PartialEq<Path>`
+              `String` implements `PartialEq<PathBuf>`
+              `String` implements `PartialEq<Bytes>`
+              `String` implements `PartialEq<BytesMut>`
+            and 3 others
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-10948023926815317347.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: no method named `persist_store` found for reference `&app::App` in the current scope
+   --> src/lib.rs:367:26
+    |
+367 | ...lf.persist_store(mo...
+    |       ^^^^^^^^^^^^^ method not found in `&app::App`
+
+error[E0616]: field `0` of struct `outbox::OpId` is private
+   --> src/lib.rs:375:97
+    |
+375 | ...p_id.0 == op_id) {
+    |         ^ private field
+
+error[E0599]: no method named `mark_failed` found for mutable reference `&mut OutboxEntry` in the current scope
+   --> src/lib.rs:376:31
+    |
+376 | ...   entry.mark_failed(
+    |       ------^^^^^^^^^^^ method not found in `&mut OutboxEntry`
+
+error[E0599]: no method named `persist_store` found for reference `&app::App` in the current scope
+   --> src/lib.rs:382:26
+    |
+382 | ...lf.persist_store(mo...
+    |       ^^^^^^^^^^^^^ method not found in `&app::App`
+
+error[E0308]: mismatched types
+   --> src/lib.rs:400:81
+    |
+400 | ...c| c.id == case_id) {
+    |       ----    ^^^^^^^ expected `model::CaseId`, found `event::CaseId`
+    |       |
+    |       expected because this is `model::CaseId`
+    |
+    = note: `event::CaseId` and `model::CaseId` have similar names, but are actually distinct types
+note: `event::CaseId` is defined in module `crate::event` of the current crate
+   --> src/event.rs:39:9
+    |
+ 39 |         pub struct $name(String);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 58 | typed_id!(CaseId);
+    | ----------------- in this macro invocation
+note: `model::CaseId` is defined in module `crate::model` of the current crate
+   --> src/model.rs:7:1
+    |
+  7 | pub struct CaseId(pu...
+    | ^^^^^^^^^^^^^^^^^
+    = note: this error originates in the macro `typed_id` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> src/lib.rs:401:43
+    |
+401 | ...if case.status == "pending" {
+    |       -----------    ^^^^^^^^^ expected `ServerCaseStatus`, found `&str`
+    |       |
+    |       expected because this is `ServerCaseStatus`
+
+error[E0308]: mismatched types
+   --> src/lib.rs:402:43
+    |
+402 | ...   case.status = "claimed".to_string();
+    |       -----------   ^^^^^^^^^^^^^^^^^^^^^ expected `ServerCaseStatus`, found `String`
+    |       |
+    |       expected due to the type of this binding
+
+error[E0599]: no method named `to_vec` found for enum `Option<T>` in the current scope
+   --> src/lib.rs:416:60
+    |
+416 | ...().to_vec(),
+    |       ^^^^^^ method not found in `Option<&...>`
+    |
+note: the method `to_vec` exists on the type `&Vec<u8>`
+   --> /private/tmp/rust-20260123-8344-1t53h/rustc-1.93.0-src/library/alloc/src/slice.rs:372:5
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-14753032199853312487.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: consider using `Option::expect` to unwrap the `&Vec<u8>` value, panicking if the value is an `Option::None`
+    |
+416 |                                             body: r.body().expect("REASON").to_vec(),
+    |                                                           +++++++++++++++++
+
+error[E0308]: mismatched types
+   --> src/lib.rs:432:81
+    |
+432 | ...c| c.id == case_id) {
+    |       ----    ^^^^^^^ expected `model::CaseId`, found `event::CaseId`
+    |       |
+    |       expected because this is `model::CaseId`
+    |
+    = note: `event::CaseId` and `model::CaseId` have similar names, but are actually distinct types
+note: `event::CaseId` is defined in module `crate::event` of the current crate
+   --> src/event.rs:39:9
+    |
+ 39 |         pub struct $name(String);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 58 | typed_id!(CaseId);
+    | ----------------- in this macro invocation
+note: `model::CaseId` is defined in module `crate::model` of the current crate
+   --> src/model.rs:7:1
+    |
+  7 | pub struct CaseId(pu...
+    | ^^^^^^^^^^^^^^^^^
+    = note: this error originates in the macro `typed_id` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> src/lib.rs:433:39
+    |
+433 | ...   case.status = next.clone();
+    |       -----------   ^^^^^^^^^^^^ expected `ServerCaseStatus`, found `CaseStatus`
+    |       |
+    |       expected due to the type of this binding
+
+error[E0599]: no method named `to_vec` found for enum `Option<T>` in the current scope
+   --> src/lib.rs:447:56
+    |
+447 | ...().to_vec(),
+    |       ^^^^^^ method not found in `Option<&...>`
+    |
+note: the method `to_vec` exists on the type `&Vec<u8>`
+   --> /private/tmp/rust-20260123-8344-1t53h/rustc-1.93.0-src/library/alloc/src/slice.rs:372:5
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-5921e612c3458b02.long-type-14753032199853312487.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: consider using `Option::expect` to unwrap the `&Vec<u8>` value, panicking if the value is an `Option::None`
+    |
+447 |                                         body: r.body().expect("REASON").to_vec(),
+    |                                                       +++++++++++++++++
+
+error[E0026]: variant `event::PushPayload::NewRescue` does not have fields named `lat`, `lng`
+   --> src/lib.rs:484:62
+    |
+484 | ..._, lat: _, lng: _...
+    |       ^^^     ^^^ variant `event::PushPayload::NewRescue` does not have these fields
+
+error[E0027]: pattern does not mention field `location`
+   --> src/lib.rs:484:25
+    |
+484 | ...   PushPayload::NewRes...
+    |       ^^^^^^^^^^^^^^^^^^^...ing field `location`
+    |
+help: include the missing field in the pattern
+    |
+484 |                         PushPayload::NewRescue { case_id: _, lat: _, lng: _, location } => {
+    |                                                                            ++++++++++
+help: if you don't care about this missing field, you can explicitly ignore it
+    |
+484 |                         PushPayload::NewRescue { case_id: _, lat: _, lng: _, location: _ } => {
+    |                                                                            +++++++++++++
+help: or always ignore missing fields here
+    |
+484 |                         PushPayload::NewRescue { case_id: _, lat: _, lng: _, .. } => {
+    |                                                                            ++++
+
+error[E0308]: mismatched types
+   --> src/lib.rs:490:89
+    |
+490 | ...c| c.id == case_id) {
+    |       ----    ^^^^^^^ expected `model::CaseId`, found `event::CaseId`
+    |       |
+    |       expected because this is `model::CaseId`
+    |
+    = note: `event::CaseId` and `model::CaseId` have similar names, but are actually distinct types
+note: `event::CaseId` is defined in module `crate::event` of the current crate
+   --> src/event.rs:39:9
+    |
+ 39 |         pub struct $name(String);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 58 | typed_id!(CaseId);
+    | ----------------- in this macro invocation
+note: `model::CaseId` is defined in module `crate::model` of the current crate
+   --> src/model.rs:7:1
+    |
+  7 | pub struct CaseId(pu...
+    | ^^^^^^^^^^^^^^^^^
+    = note: this error originates in the macro `typed_id` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> src/lib.rs:491:47
+    |
+491 | ...   case.status = "claimed".to_string();
+    |       -----------   ^^^^^^^^^^^^^^^^^^^^^ expected `ServerCaseStatus`, found `String`
+    |       |
+    |       expected due to the type of this binding
+
+error[E0308]: mismatched types
+   --> src/lib.rs:493:60
+    |
+493 | ...c| c.id != case_id);
+    |       ----    ^^^^^^^ expected `model::CaseId`, found `event::CaseId`
+    |       |
+    |       expected because this is `model::CaseId`
+    |
+    = note: `event::CaseId` and `model::CaseId` have similar names, but are actually distinct types
+note: `event::CaseId` is defined in module `crate::event` of the current crate
+   --> src/event.rs:39:9
+    |
+ 39 |         pub struct $name(String);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 58 | typed_id!(CaseId);
+    | ----------------- in this macro invocation
+note: `model::CaseId` is defined in module `crate::model` of the current crate
+   --> src/model.rs:7:1
+    |
+  7 | pub struct CaseId(pu...
+    | ^^^^^^^^^^^^^^^^^
+    = note: this error originates in the macro `typed_id` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> src/lib.rs:497:89
+    |
+497 | ...c| c.id == case_id) {
+    |       ----    ^^^^^^^ expected `model::CaseId`, found `event::CaseId`
+    |       |
+    |       expected because this is `model::CaseId`
+    |
+    = note: `event::CaseId` and `model::CaseId` have similar names, but are actually distinct types
+note: `event::CaseId` is defined in module `crate::event` of the current crate
+   --> src/event.rs:39:9
+    |
+ 39 |         pub struct $name(String);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 58 | typed_id!(CaseId);
+    | ----------------- in this macro invocation
+note: `model::CaseId` is defined in module `crate::model` of the current crate
+   --> src/model.rs:7:1
+    |
+  7 | pub struct CaseId(pu...
+    | ^^^^^^^^^^^^^^^^^
+    = note: this error originates in the macro `typed_id` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0308]: mismatched types
+   --> src/lib.rs:498:47
+    |
+498 | ...   case.status = new_status;
+    |       -----------   ^^^^^^^^^^ expected `ServerCaseStatus`, found `CaseStatus`
+    |       |
+    |       expected due to the type of this binding
+
+warning: unused variable: `now`
+   --> src/outbox.rs:659:69
+    |
+659 | ...pId, now: UnixT...
+    |         ^^^ help: if this is intentional, prefix it with an underscore: `_now`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+error[E0596]: cannot borrow `session` as mutable, as it is not declared as mutable
+   --> src/vision.rs:454:23
+    |
+454 | ... = session.run(...
+    |       ^^^^^^^ cannot borrow as mutable
+    |
+help: consider changing this to be mutable
+    |
+450 |         let mut session = self.session.lock().map_err(|_| {
+    |             +++
+
+warning: value assigned to `result` is never read
+   --> src/vision.rs:743:22
+    |
+743 | ... = Vec::with_capacity(keep_indices.len());
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `quality`
+   --> src/image_processing.rs:409:36
+    |
+409 | ...e, quality: u8)...
+    |       ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_quality`
+
+Some errors have detailed explanations: E0026, E0027, E0061, E0276, E0277, E0308, E0423, E0425, E0432...
+For more information about an error, try `rustc --explain E0026`.
+warning: `shared` (lib) generated 10 warnings
+error: could not compile `shared` (lib) due to 90 previous errors; 10 warnings emitted

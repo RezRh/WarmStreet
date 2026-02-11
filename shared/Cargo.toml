@@ -1,0 +1,76 @@
+[package]
+name = "shared"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+# Necessary for Crux:
+# cdylib for Android/Web, staticlib for iOS, rlib for Rust tests
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[features]
+default = ["ml"]
+camera = []
+push = []
+full = ["camera", "push", "ml"]
+# Optional ML stack - kept optional to speed up build times when not needed
+ml = ["dep:ort", "dep:ndarray", "dep:fast_image_resize"]
+
+[dependencies]
+# --- Crux Core ---
+crux_core = "0.7.6"
+crux_http = "0.7.0"
+crux_kv = "0.4.0"
+
+# --- Serialization (Crux is data-driven, so these are vital) ---
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_bytes = "0.11"
+ciborium = "0.2"
+uuid = { version = "1.7", features = ["v4", "serde"] }
+bytes = "1.5"
+hex = "0.4"
+url = "2"
+
+# --- Crypto & Security ---
+# Note: getrandom with "js" feature is required for Wasm/Browser support
+getrandom = { version = "0.2", features = ["js"] }
+chacha20poly1305 = "0.10"
+aead = "0.5"
+secrecy = { version = "0.8", features = ["serde"] }
+zeroize = "1.7"
+blake3 = "1.5"
+rand = "0.8"
+
+# --- Image Processing ---
+# "default-features = false" reduces bloat by only picking needed formats
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+webp = "0.3"
+
+# --- ML Stack (Optional via Features) ---
+ort = { version = "2.0.0-rc.11", features = ["ndarray"], optional = true }
+ndarray = { version = "0.17", optional = true }
+fast_image_resize = { version = "3", optional = true }
+
+# --- Utilities ---
+thiserror = "1.0"
+tracing = "0.1"
+async-trait = "0.1"
+lru = "0.12"
+geojson = "0.24"
+
+[dependencies.tokio]
+version = "1.36"
+features = ["sync", "macros", "rt"]
+
+# SQLite is great for mobile, but won't compile for Wasm.
+# This gates it so your web build doesn't break.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+[dev-dependencies]
+proptest = "1.4"
+tempfile = "3.10"
+# Tests need the full multithreaded runtime
+tokio = { version = "1.36", features = ["rt-multi-thread", "macros"] }

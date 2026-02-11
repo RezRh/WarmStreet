@@ -1,0 +1,49 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node.js (API & Worker)
+node_modules/
+dist/
+build/
+.env
+.env.*
+.dev.vars
+!.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+
+# iOS
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+Pods/
+DerivedData/
+*.xcworkspace/*
+!*.xcworkspace/contents.xcworkspacedata
+
+# Android
+.gradle/
+build/
+*.iml
+.idea/
+local.properties
+.cxx/
+captures/
+
+# Rust (shared)
+target/
+Cargo.lock
+
+# Cloudflare
+.wrangler/
+worker-configuration.d.ts
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
