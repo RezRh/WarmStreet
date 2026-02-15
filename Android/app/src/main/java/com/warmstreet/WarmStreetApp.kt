@@ -35,6 +35,7 @@ import com.warmstreet.shared.ViewState
 import com.warmstreet.ui.components.ErrorDialog
 import com.warmstreet.ui.components.FullScreenError
 import com.warmstreet.ui.components.FullScreenLoading
+import com.warmstreet.ui.components.LoadingOverlay
 import com.warmstreet.ui.screens.CameraPreviewScreen
 import com.warmstreet.ui.screens.LocationPermissionScreen
 import com.warmstreet.ui.screens.LoginScreen
@@ -251,26 +252,6 @@ fun WarmStreetApp(core: Core) {
     }
 }
 
-@Composable
-private fun LoadingOverlay() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .align(Alignment.Center),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(48.dp),
-                color = MaterialTheme.colorScheme.primary,
-                strokeWidth = 4.dp
-            )
-        }
-    }
-}
 
 private fun createTransitionSpec(
     initialState: ViewState,

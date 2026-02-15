@@ -1,22 +1,138 @@
 package com.warmstreet.shared
 
+import android.graphics.Bitmap
+
 // Generics and core types
 class App {
     constructor()
-    fun view(): ViewModel = ViewModel.Loading
+    fun view(): ViewModel = ViewModel(ViewState.Loading())
     suspend fun update(event: Event): List<Effect> = emptyList()
 }
 
-abstract class ViewModel {
-    object Loading : ViewModel()
-    data class Error(val message: String) : ViewModel()
-    // Add other view states as needed
+data class ViewModel(
+    val state: ViewState,
+    val error: ErrorDetail? = null,
+    val toast: String? = null,
+    val isGlobalLoading: Boolean = false
+) {
+    companion object {
+        val Loading = ViewModel(ViewState.Loading())
+        fun Error(message: String) = ViewModel(ViewState.Error(message = message))
+    }
 }
 
-sealed class Event {
-    data class SystemError(val message: String, val source: String) : Event()
-    // Add other events as needed
+data class ErrorDetail(
+    val message: String,
+    val isTransient: Boolean,
+    val isRetryable: Boolean
+)
+
+sealed class ViewState {
+    data class Loading(val message: String? = null) : ViewState()
+    object Unauthenticated : ViewState()
+    object Authenticating : ViewState()
+    data class OnboardingLocation(val permissionState: Any? = null) : ViewState()
+    data class OnboardingRadius(val location: Location, val radius: Double) : ViewState()
+    data class PinDrop(val initialLocation: Location?) : ViewState()
+    data class CameraCapture(val config: CaptureConfig) : ViewState()
+    data class Ready(
+        val listItems: List<CaseListItem> = emptyList(),
+        val selectedDetail: CaseDetail? = null,
+        val stagedPhoto: CapturedImage? = null,
+        val stagedCrop: CapturedImage? = null,
+        val feedView: FeedViewMode = FeedViewMode.Map
+    ) : ViewState()
+    data class Error(
+        val title: String = "Error",
+        val message: String,
+        val isRetryable: Boolean = false
+    ) : ViewState()
 }
+
+enum class FeedViewMode { Map, List }
+
+data class Location(val latitude: Double, val longitude: Double)
+
+data class CaseListItem(
+    val id: String,
+    val descriptionPreview: String,
+    val distanceText: String,
+    val timeAgo: String,
+    val photoUrl: String?
+)
+
+data class CaseDetail(
+    val id: String,
+    val description: String,
+    val status: String,
+    val photoUrl: String?,
+    val distanceText: String,
+    val timeAgo: String,
+    val geminiDiagnosis: String?,
+    val claimState: ClaimState,
+    val availableTransitions: List<String>
+)
+
+enum class ClaimState { None, ClaimedByMe, ClaimedByOther, Available }
+
+sealed class Event {
+    // Auth
+    data class LoginRequested(val provider: String) : Event()
+    object ContinueAsGuest : Event()
+    object CancelAuthentication : Event()
+    
+    // Navigation & UI
+    object BackPressed : Event()
+    object Retry : Event()
+    object ErrorDismissed : Event()
+    object ToastShown : Event()
+    object SwitchToMap : Event()
+    object SwitchToList : Event()
+    
+    // Location
+    object RequestLocationPermission : Event()
+    object UseCurrentLocation : Event()
+    object ShowPinDrop : Event()
+    object ClosePinDrop : Event()
+    data class LocationPinned(val location: Location) : Event()
+    data class RadiusChanged(val radius: Double) : Event()
+    object ConfirmRadius : Event()
+    data class LocationPinDropped(val location: Location) : Event()
+    
+    // Camera
+    object CapturePhotoRequested : Event()
+    object CancelCapture : Event()
+    data class PhotoCaptured(val image: CapturedImage) : Event()
+    object PhotoCancelled : Event()
+    
+    // Cases
+    data class CaseMarkerTapped(val id: String) : Event()
+    object CaseDismissed : Event()
+    data class ClaimRequested(val id: String) : Event()
+    data class TransitionRequested(val id: String, val transition: String) : Event()
+    data class CreateCaseRequested(val payload: CreateCasePayload) : Event()
+    
+    // System
+    data class SystemError(val message: String, val source: String) : Event()
+    data class NotificationPermissionResult(val granted: Boolean) : Event()
+    data class LocationPermissionResult(val fineLocation: Boolean, val coarseLocation: Boolean) : Event()
+    data class DeepLink(val path: String, val params: Map<String, String?>) : Event()
+    data class UniversalLink(val path: String, val params: Map<String, String?>) : Event()
+    data class OAuthError(val error: String, val description: String?) : Event()
+    data class OAuthCallback(val code: String, val state: String?) : Event()
+    
+    // Lifecycle
+    object LifecycleStarted : Event()
+    object LifecycleResumed : Event()
+    object LifecyclePaused : Event()
+    object LifecycleStopped : Event()
+}
+
+data class CreateCasePayload(
+    val photo: CapturedImage,
+    val location: Location,
+    val description: String
+)
 
 sealed class Effect {
     object Render : Effect()
@@ -43,25 +159,18 @@ data class HttpRequest(
     val timeoutMs: Long = 30000
 )
 
-// Url wrapper to match usage url.asStr()
 data class UrlWrapper(private val url: String) {
     fun asStr(): String = url
 }
 
-// HttpHeaders
 class HttpHeaders {
     private val headers = mutableListOf<Pair<String, String>>()
-    
     fun iter(): Iterator<Pair<String, String>> = headers.iterator()
     fun get(name: String): String? = headers.find { it.first.equals(name, ignoreCase = true) }?.second
-    fun insert(name: String, value: String) {
-        headers.add(name to value)
-    }
+    fun insert(name: String, value: String) { headers.add(name to value) }
 }
 
-enum class HttpMethod {
-    Get, Post, Put, Patch, Delete, Head, Options
-}
+enum class HttpMethod { Get, Post, Put, Patch, Delete, Head, Options }
 
 sealed class HttpResult {
     data class Ok(val response: HttpResponse) : HttpResult()
@@ -97,13 +206,8 @@ sealed class KvOperation {
     data class DeleteMulti(val keys: kotlin.collections.List<KvKey>) : KvOperation()
 }
 
-data class KvKey(private val key: String) {
-    fun raw(): String = key
-}
-
-data class KeyNamespace(private val prefix: String) {
-    fun prefix(): String = prefix
-}
+data class KvKey(private val key: String) { fun raw(): String = key }
+data class KeyNamespace(private val prefix: String) { fun prefix(): String = prefix }
 
 sealed class KvResult {
     data class Ok(val output: KvOutput) : KvResult()
@@ -120,28 +224,15 @@ sealed class KvOutput {
     data class DeletedMulti(val deletedCount: ULong) : KvOutput()
 }
 
-data class KvValue(
-    val data: ByteArray,
-    val version: ULong,
-    val createdAt: ULong,
-    val updatedAt: ULong
-)
-
-data class KvListEntry(
-    val key: String,
-    val version: ULong,
-    val size: ULong,
-    val updatedAt: ULong
-)
+data class KvValue(val data: ByteArray, val version: ULong, val createdAt: ULong, val updatedAt: ULong)
+data class KvListEntry(val key: String, val version: ULong, val size: ULong, val updatedAt: ULong)
 
 sealed class KvError {
     data class Storage(val code: StorageErrorCode, val message: String, val retryable: Boolean) : KvError()
     data class VersionMismatch(val expected: ULong, val found: ULong) : KvError()
 }
 
-enum class StorageErrorCode {
-    IoError, Corrupted
-}
+enum class StorageErrorCode { IoError, Corrupted }
 
 // Crypto Capabilities
 sealed class CryptoOperation {
@@ -166,13 +257,8 @@ sealed class CryptoError {
     data class NotSupported(val operation: String) : CryptoError()
 }
 
-enum class HashAlgorithm {
-    Sha256, Sha384, Sha512
-}
-
-enum class KeyAlgorithm {
-    Aes256
-}
+enum class HashAlgorithm { Sha256, Sha384, Sha512 }
+enum class KeyAlgorithm { Aes256 }
 
 // Camera Capabilities
 sealed class CameraOperation {
@@ -184,8 +270,44 @@ sealed class CameraOperation {
     object CancelPending : CameraOperation()
 }
 
-data class CaptureConfig(val todo: Any? = null)
-data class GalleryPickConfig(val todo: Any? = null)
+data class CaptureConfig(
+    val facing: CameraFacing = CameraFacing.Back,
+    val format: ImageFormat = ImageFormat.Jpeg,
+    val quality: UInt = 80u,
+    val maxWidth: UInt = 1920u,
+    val maxHeight: UInt = 1080u,
+    val flash: FlashMode = FlashMode.Off,
+    val aspectRatio: AspectRatio = AspectRatio.Full,
+    val stripMetadata: Boolean = true,
+    val mirrorFrontCamera: Boolean = false,
+    val timeoutMs: ULong = 30000uL,
+    val maxFileSize: UInt = 10u * 1024u * 1024u
+)
+
+data class GalleryPickConfig(
+    val allowMultiple: Boolean = false,
+    val maxSelections: UInt = 1u,
+    val format: ImageFormat = ImageFormat.Jpeg,
+    val quality: UInt = 80u,
+    val maxWidth: UInt = 1920u,
+    val maxHeight: UInt = 1080u,
+    val stripMetadata: Boolean = true,
+    val maxFileSize: UInt = 10u * 1024u * 1024u
+)
+
+enum class CameraFacing { Front, Back }
+enum class ImageFormat { Jpeg, Png, WebP }
+enum class FlashMode { On, Off, Auto, Torch }
+enum class AspectRatio { Square, FourThree, SixteenNine, Full }
+
+data class CapturedImage(
+    val data: ByteArray,
+    val format: ImageFormat,
+    val width: UInt,
+    val height: UInt,
+    val fileSize: ULong,
+    val captureTimeMs: ULong
+)
 
 sealed class CameraResult {
     data class Ok(val output: CameraOutput) : CameraResult()
@@ -195,17 +317,19 @@ sealed class CameraResult {
 sealed class CameraOutput {
     data class PermissionStatus(val status: com.warmstreet.shared.PermissionStatus) : CameraOutput()
     data class Capabilities(val capabilities: CameraCapabilities) : CameraOutput()
+    data class Photo(val image: CapturedImage) : CameraOutput()
+    data class Photos(val images: List<CapturedImage>) : CameraOutput()
     object Cancelled : CameraOutput()
 }
 
 sealed class CameraError {
     data class Internal(val message: String) : CameraError()
     data class Unavailable(val reason: String) : CameraError()
+    object PermissionDenied : CameraError()
+    data class CaptureFailed(val reason: String) : CameraError()
 }
 
-enum class PermissionStatus {
-    Granted, NotDetermined, Denied
-}
+enum class PermissionStatus { Granted, NotDetermined, Denied, DeniedPermanently }
 
 data class CameraCapabilities(
     val hasFrontCamera: Boolean,
@@ -219,9 +343,7 @@ data class CameraCapabilities(
     val platform: CameraPlatform
 )
 
-enum class CameraPlatform {
-    Android, iOS
-}
+enum class CameraPlatform { Android, iOS }
 
 // Push Capabilities
 sealed class PushOperation {
@@ -256,7 +378,13 @@ sealed class LocationResult {
     data class Error(val error: LocationError) : LocationResult()
 }
 
-class LocationOutput // Empty
+data class LocationOutput(val status: PermissionStatus? = null) {
+    companion object {
+        fun PermissionStatus(fineLocation: Boolean, coarseLocation: Boolean) = LocationOutput(
+            if (fineLocation || coarseLocation) PermissionStatus.Granted else PermissionStatus.Denied
+        )
+    }
+}
 
 sealed class LocationError {
     data class Internal(val message: String) : LocationError()

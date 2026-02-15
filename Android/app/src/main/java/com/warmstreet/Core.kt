@@ -9,8 +9,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.warmstreet.capabilities.*
 import com.warmstreet.shared.*
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MediaType.Companion.toMediaType
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -34,13 +34,9 @@ class Core(application: Application) : AndroidViewModel(application) {
                         _isLibraryLoaded.value = true
                     } catch (e: UnsatisfiedLinkError) {
                         Log.e(TAG, "Failed to load native library", e)
-                        // In production we might want to recover or show fatal error
                         throw RuntimeException("Failed to load warmstreet native library", e)
                     }
                 }
-            } else {
-                 // waits until loaded if another thread is loading?
-                 // Simple check for now
             }
         }
     }
@@ -50,7 +46,6 @@ class Core(application: Application) : AndroidViewModel(application) {
     private val effectChannel = Channel<Effect>(Channel.UNLIMITED)
     private var effectProcessorJob: Job? = null
 
-    // Replaced ActivityCallbacks with Channel
     sealed class CoreCommand {
         data class RequestCameraPermission(val callback: (CameraResult) -> Event) : CoreCommand()
         data class CapturePhoto(val config: CaptureConfig, val callback: (CameraResult) -> Event) : CoreCommand()
@@ -73,10 +68,6 @@ class Core(application: Application) : AndroidViewModel(application) {
     private val cryptoHandler: CryptoHandler
     private val pushHandler: PushHandler
 
-    private val isProcessing = AtomicBoolean(false)
-
-    // Callback definition removed in favor of CoreCommand
-
     init {
         val context = application.applicationContext
 
@@ -87,41 +78,48 @@ class Core(application: Application) : AndroidViewModel(application) {
         cryptoHandler = CryptoHandler()
         pushHandler = PushHandler(context)
 
-        // Initialize App on background thread
         viewModelScope.launch(Dispatchers.IO) {
             ensureLibraryLoaded()
             
             try {
-                // Initialize Rust Core
                 app = App()
-                
-                // Get initial view
                 val initialView = app.view()
                 
                 withContext(Dispatchers.Main) {
                    view = initialView
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize Crux app asynchronously", e)
+                Log.e(TAG, "Failed to initialize app asynchronously", e)
                 withContext(Dispatchers.Main) {
                     view = ViewModel.Error("Failed to initialize system")
                 }
             }
         }
         
-        // Lateinit var app must be handled carefully. 
-        // We need to change `private val app: App` to `private lateinit var app: App` 
-        // or make it nullable / atomic ref.
-        // But since we can't change the field definition in this chunk easily without context,
-        // we'll assume we can change the field definition in another chunk or rely on it being initialized before use?
-        // Wait, `private val app: App` needs immediate initialization in init block or it must be lateinit.
-        // The original code was `private val app: App`.
-        // I need to change line 38 as well.
-        
         startEffectProcessor()
     }
 
-    // Removed setActivityCallbacks
+    // Lifecycle methods called by Application class
+    fun onUnhandledException(throwable: Throwable) {
+        Log.e(TAG, "Unhandled exception in application", throwable)
+        update(Event.SystemError(throwable.message ?: "Unknown crash", "UncaughtException"))
+    }
+
+    fun onAppForeground() {
+        update(Event.LifecycleResumed)
+    }
+
+    fun onAppBackground() {
+        update(Event.LifecyclePaused)
+    }
+
+    fun onLowMemory() {
+        Log.w(TAG, "Low memory reported")
+    }
+
+    fun onTrimMemory(level: Int) {
+        Log.w(TAG, "Trim memory reported: $level")
+    }
 
     private fun startEffectProcessor() {
         effectProcessorJob = viewModelScope.launch(Dispatchers.Default) {
@@ -181,34 +179,13 @@ class Core(application: Application) : AndroidViewModel(application) {
                     updateView()
                 }
             }
-
-            is Effect.Http -> {
-                processHttpEffect(effect)
-            }
-
-            is Effect.Kv -> {
-                processKvEffect(effect)
-            }
-
-            is Effect.Crypto -> {
-                processCryptoEffect(effect)
-            }
-
-            is Effect.Camera -> {
-                processCameraEffect(effect)
-            }
-
-            is Effect.Push -> {
-                processPushEffect(effect)
-            }
-
-            is Effect.Location -> {
-                processLocationEffect(effect)
-            }
-
-            else -> {
-                Log.w(TAG, "Unhandled effect type: ${effect::class.simpleName}")
-            }
+            is Effect.Http -> processHttpEffect(effect)
+            is Effect.Kv -> processKvEffect(effect)
+            is Effect.Crypto -> processCryptoEffect(effect)
+            is Effect.Camera -> processCameraEffect(effect)
+            is Effect.Push -> processPushEffect(effect)
+            is Effect.Location -> processLocationEffect(effect)
+            else -> Log.w(TAG, "Unhandled effect type: ${effect::class.simpleName}")
         }
     }
 
@@ -226,9 +203,7 @@ class Core(application: Application) : AndroidViewModel(application) {
                 )
             )
         }
-
-        val responseEvent = effect.callback(result)
-        updateInternal(responseEvent)
+        updateInternal(effect.callback(result))
     }
 
     private suspend fun processKvEffect(effect: Effect.Kv) {
@@ -246,9 +221,7 @@ class Core(application: Application) : AndroidViewModel(application) {
                 )
             )
         }
-
-        val responseEvent = effect.callback(result)
-        updateInternal(responseEvent)
+        updateInternal(effect.callback(result))
     }
 
     private suspend fun processCryptoEffect(effect: Effect.Crypto) {
@@ -262,26 +235,20 @@ class Core(application: Application) : AndroidViewModel(application) {
                 CryptoError.Internal(message = e.message ?: "Unknown error")
             )
         }
-
-        val responseEvent = effect.callback(result)
-        updateInternal(responseEvent)
+        updateInternal(effect.callback(result))
     }
 
     private suspend fun processCameraEffect(effect: Effect.Camera) {
-
         when (effect.operation) {
             is CameraOperation.RequestPermission -> {
                 _commands.send(CoreCommand.RequestCameraPermission(effect.callback))
             }
-
             is CameraOperation.CapturePhoto -> {
                 _commands.send(CoreCommand.CapturePhoto(effect.operation.config, effect.callback))
             }
-
             is CameraOperation.PickFromGallery -> {
                 _commands.send(CoreCommand.PickFromGallery(effect.operation.config, effect.callback))
             }
-
             else -> {
                 val result = try {
                     cameraHandler.handle(effect.operation)
@@ -293,9 +260,7 @@ class Core(application: Application) : AndroidViewModel(application) {
                         CameraError.Internal(message = e.message ?: "Unknown error")
                     )
                 }
-
-                val responseEvent = effect.callback(result)
-                updateInternal(responseEvent)
+                updateInternal(effect.callback(result))
             }
         }
     }
@@ -305,7 +270,6 @@ class Core(application: Application) : AndroidViewModel(application) {
             _commands.send(CoreCommand.RequestNotificationPermission(effect.callback))
             return
         }
-
         val result = try {
             pushHandler.handle(effect.operation)
         } catch (e: CancellationException) {
@@ -316,9 +280,7 @@ class Core(application: Application) : AndroidViewModel(application) {
                 PushError.Internal(message = e.message ?: "Unknown error")
             )
         }
-
-        val responseEvent = effect.callback(result)
-        updateInternal(responseEvent)
+        updateInternal(effect.callback(result))
     }
 
     private suspend fun processLocationEffect(effect: Effect.Location) {
@@ -326,7 +288,6 @@ class Core(application: Application) : AndroidViewModel(application) {
             _commands.send(CoreCommand.RequestLocationPermission(effect.callback))
             return
         }
-
         val result = try {
             locationHandler.handle(effect.operation)
         } catch (e: CancellationException) {
@@ -337,29 +298,20 @@ class Core(application: Application) : AndroidViewModel(application) {
                 LocationError.Internal(message = e.message ?: "Unknown error")
             )
         }
-
-        val responseEvent = effect.callback(result)
-        updateInternal(responseEvent)
+        updateInternal(effect.callback(result))
     }
 
     private suspend fun sendErrorToCore(error: Exception) {
-        val errorEvent = Event.SystemError(
+        updateInternal(Event.SystemError(
             message = error.message ?: "Unknown error",
             source = error::class.simpleName ?: "Unknown"
-        )
-        updateInternal(errorEvent)
-    }
-
-    fun sendEvent(event: Event) {
-        update(event)
+        ))
     }
 
     override fun onCleared() {
         super.onCleared()
-
         effectProcessorJob?.cancel()
         effectChannel.close()
-
         try {
             httpHandler.close()
             keyValueHandler.close()
@@ -368,15 +320,7 @@ class Core(application: Application) : AndroidViewModel(application) {
         } catch (e: Exception) {
             Log.w(TAG, "Error during cleanup", e)
         }
-
-        Log.i(TAG, "Core ViewModel cleared")
     }
-}
-
-sealed class ViewModelState {
-    object Loading : ViewModelState()
-    data class Ready(val model: ViewModel) : ViewModelState()
-    data class Error(val message: String) : ViewModelState()
 }
 
 interface EffectHandler<Op, Result> {
@@ -390,8 +334,6 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
         .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-        .followRedirects(true)
-        .followSslRedirects(true)
         .build()
 
     override suspend fun handle(operation: HttpOperation): HttpResult {
@@ -403,23 +345,8 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
     }
 
     private fun executeRequest(request: HttpRequest): HttpResult {
-        val url = try {
-            okhttp3.HttpUrl.parse(request.url.asStr())
-                ?: return HttpResult.Error(
-                    HttpError.InvalidUrl(
-                        url = request.url.asStr(),
-                        reason = "Invalid URL format"
-                    )
-                )
-        } catch (e: Exception) {
-            return HttpResult.Error(
-                HttpError.InvalidUrl(
-                    url = request.url.asStr(),
-                    reason = e.message ?: "Invalid URL"
-                )
-            )
-        }
-
+        val url = request.url.asStr().toHttpUrlOrNull()
+            ?: return HttpResult.Error(HttpError.InvalidUrl(request.url.asStr(), "Invalid URL"))
         val requestBuilder = okhttp3.Request.Builder().url(url)
 
         for ((name, value) in request.headers.iter()) {
@@ -427,8 +354,7 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
         }
 
         val body = request.body?.let { bytes ->
-            val contentType = request.headers.get("Content-Type")
-                ?.toMediaTypeOrNull()
+            val contentType = request.headers.get("Content-Type")?.toMediaTypeOrNull()
                 ?: "application/octet-stream".toMediaTypeOrNull()
             okhttp3.RequestBody.create(contentType, bytes)
         }
@@ -444,31 +370,14 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
         }
 
         val startTime = System.currentTimeMillis()
-
         return try {
-            val call = client.newCall(requestBuilder.build())
-            val response = call.execute()
+            val response = client.newCall(requestBuilder.build()).execute()
             val duration = System.currentTimeMillis() - startTime
-
             val responseHeaders = HttpHeaders()
             for ((name, value) in response.headers) {
-                try {
-                    responseHeaders.insert(name, value)
-                } catch (e: Exception) {
-                }
+                try { responseHeaders.insert(name, value) } catch (e: Exception) {}
             }
-
             val responseBody = response.body?.bytes() ?: ByteArray(0)
-
-            if (responseBody.size > request.maxResponseSize) {
-                return HttpResult.Error(
-                    HttpError.ResponseTooLarge(
-                        size = responseBody.size,
-                        max = request.maxResponseSize
-                    )
-                )
-            }
-
             HttpResult.Ok(
                 HttpResponse(
                     status = response.code.toUShort(),
@@ -478,34 +387,8 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
                     durationMs = duration.toULong()
                 )
             )
-        } catch (e: java.net.SocketTimeoutException) {
-            HttpResult.Error(
-                HttpError.Timeout(
-                    timeoutMs = request.timeoutMs,
-                    requestId = request.requestId
-                )
-            )
-        } catch (e: java.net.UnknownHostException) {
-            HttpResult.Error(
-                HttpError.DnsError(
-                    host = url.host,
-                    message = e.message ?: "Unknown host"
-                )
-            )
-        } catch (e: javax.net.ssl.SSLException) {
-            HttpResult.Error(
-                HttpError.TlsError(
-                    host = url.host,
-                    message = e.message ?: "TLS error"
-                )
-            )
-        } catch (e: java.io.IOException) {
-            HttpResult.Error(
-                HttpError.ConnectionError(
-                    host = url.host,
-                    message = e.message ?: "Connection error"
-                )
-            )
+        } catch (e: Exception) {
+            HttpResult.Error(HttpError.Network(message = e.message ?: "Network error", status = null))
         }
     }
 
@@ -516,7 +399,6 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
 }
 
 class KeyValueHandler(private val context: android.content.Context) : EffectHandler<KvOperation, KvResult> {
-
     private val prefs = context.getSharedPreferences("warmstreet_kv", android.content.Context.MODE_PRIVATE)
     private val mutex = Mutex()
 
@@ -535,389 +417,127 @@ class KeyValueHandler(private val context: android.content.Context) : EffectHand
     }
 
     private fun get(key: KvKey): KvResult {
-        val raw = prefs.getString(key.raw(), null)
-            ?: return KvResult.Ok(KvOutput.Value(null))
-
-        return try {
-            val value = decodeValue(raw)
-            KvResult.Ok(KvOutput.Value(value))
-        } catch (e: Exception) {
-            KvResult.Error(
-                KvError.Storage(
-                    code = StorageErrorCode.Corrupted,
-                    message = "Failed to decode value: ${e.message}",
-                    retryable = false
-                )
-            )
-        }
+        val raw = prefs.getString(key.raw(), null) ?: return KvResult.Ok(KvOutput.Value(null))
+        return decodeValue(raw)?.let { KvResult.Ok(KvOutput.Value(it)) } 
+            ?: KvResult.Error(KvError.Storage(StorageErrorCode.Corrupted, "Decode failed", false))
     }
 
     private fun set(key: KvKey, value: ByteArray, ifVersion: Long?): KvResult {
         val raw = key.raw()
-
         if (ifVersion != null) {
             val existing = prefs.getString(raw, null)
-            val currentVersion = existing?.let { decodeValue(it)?.version } ?: 0L
-
+            val currentVersion = existing?.let { decodeValue(it)?.version?.toLong() } ?: 0L
             if (currentVersion != ifVersion) {
-                return KvResult.Error(
-                    KvError.VersionMismatch(
-                        expected = ifVersion.toULong(),
-                        found = currentVersion.toULong()
-                    )
-                )
+                return KvResult.Error(KvError.VersionMismatch(ifVersion.toULong(), currentVersion.toULong()))
             }
         }
-
-        val now = System.currentTimeMillis()
         val existingValue = prefs.getString(raw, null)?.let { decodeValue(it) }
-        val newVersion = (existingValue?.version ?: 0L) + 1
-
-        val kvValue = KvValue(
-            data = value,
-            version = newVersion.toULong(),
-            createdAt = existingValue?.createdAt ?: now.toULong(),
-            updatedAt = now.toULong()
-        )
-
-        val encoded = encodeValue(kvValue)
-        prefs.edit().putString(raw, encoded).apply()
-
-        return KvResult.Ok(KvOutput.Written(version = newVersion.toULong()))
+        val newVersion = (existingValue?.version ?: 0uL) + 1uL
+        val now = System.currentTimeMillis().toULong()
+        val kvValue = KvValue(value, newVersion, existingValue?.createdAt ?: now, now)
+        prefs.edit().putString(raw, encodeValue(kvValue)).apply()
+        return KvResult.Ok(KvOutput.Written(newVersion))
     }
 
     private fun delete(key: KvKey, ifVersion: Long?): KvResult {
         val raw = key.raw()
-
         if (ifVersion != null) {
             val existing = prefs.getString(raw, null)
-            val currentVersion = existing?.let { decodeValue(it)?.version } ?: 0L
-
+            val currentVersion = existing?.let { decodeValue(it)?.version?.toLong() } ?: 0L
             if (currentVersion != ifVersion) {
-                return KvResult.Error(
-                    KvError.VersionMismatch(
-                        expected = ifVersion.toULong(),
-                        found = currentVersion.toULong()
-                    )
-                )
+                return KvResult.Error(KvError.VersionMismatch(ifVersion.toULong(), currentVersion.toULong()))
             }
         }
-
         val existed = prefs.contains(raw)
         prefs.edit().remove(raw).apply()
-
-        return KvResult.Ok(KvOutput.Deleted(existed = existed))
+        return KvResult.Ok(KvOutput.Deleted(existed))
     }
 
-    private fun exists(key: KvKey): KvResult {
-        val exists = prefs.contains(key.raw())
-        return KvResult.Ok(KvOutput.Exists(exists))
-    }
+    private fun exists(key: KvKey): KvResult = KvResult.Ok(KvOutput.Exists(prefs.contains(key.raw())))
 
     private fun list(namespace: KeyNamespace, prefix: String?, limit: UInt, cursor: String?): KvResult {
-        val namespacePrefix = "${namespace.prefix()}:"
-        val fullPrefix = prefix?.let { "$namespacePrefix$it" } ?: namespacePrefix
-
-        val allKeys = prefs.all.keys
-            .filter { it.startsWith(fullPrefix) }
-            .sorted()
-
-        val startIndex = cursor?.let { c ->
-            allKeys.indexOfFirst { it > c }.takeIf { it >= 0 } ?: allKeys.size
-        } ?: 0
-
-        val entries = allKeys
-            .drop(startIndex)
-            .take(limit.toInt())
-            .mapNotNull { key ->
-                val value = prefs.getString(key, null)?.let { decodeValue(it) }
-                value?.let {
-                    KvListEntry(
-                        key = key.removePrefix(namespacePrefix),
-                        version = it.version,
-                        size = it.data.size.toULong(),
-                        updatedAt = it.updatedAt
-                    )
-                }
+        val nsPrefix = "${namespace.prefix()}:"
+        val fullPrefix = prefix?.let { "$nsPrefix$it" } ?: nsPrefix
+        val allKeys = prefs.all.keys.filter { it.startsWith(fullPrefix) }.sorted()
+        val startIndex = cursor?.let { c -> allKeys.indexOfFirst { it > c }.takeIf { it >= 0 } ?: allKeys.size } ?: 0
+        val entries = allKeys.drop(startIndex).take(limit.toInt()).mapNotNull { key ->
+            decodeValue(prefs.getString(key, "") ?: "")?.let {
+                KvListEntry(key.removePrefix(nsPrefix), it.version, it.data.size.toULong(), it.updatedAt)
             }
-
-        val hasMore = startIndex + entries.size < allKeys.size
-        val nextCursor = if (hasMore) entries.lastOrNull()?.key else null
-
-        return KvResult.Ok(
-            KvOutput.List(
-                entries = entries,
-                nextCursor = nextCursor,
-                hasMore = hasMore
-            )
-        )
-    }
-
-    private fun getMulti(keys: List<KvKey>): KvResult {
-        val values = keys.map { key ->
-            prefs.getString(key.raw(), null)?.let { decodeValue(it) }
         }
-        return KvResult.Ok(KvOutput.Multi(values))
+        val hasMore = startIndex + entries.size < allKeys.size
+        return KvResult.Ok(KvOutput.List(entries, if (hasMore) entries.lastOrNull()?.key else null, hasMore))
     }
+
+    private fun getMulti(keys: List<KvKey>): KvResult = KvResult.Ok(KvOutput.Multi(keys.map { decodeValue(prefs.getString(it.raw(), "") ?: "") }))
 
     private fun deleteMulti(keys: List<KvKey>): KvResult {
         val editor = prefs.edit()
-        var deletedCount = 0
-
-        for (key in keys) {
-            if (prefs.contains(key.raw())) {
-                editor.remove(key.raw())
-                deletedCount++
-            }
-        }
-
+        var count = 0
+        keys.forEach { if (prefs.contains(it.raw())) { editor.remove(it.raw()); count++ } }
         editor.apply()
-        return KvResult.Ok(KvOutput.DeletedMulti(deletedCount = deletedCount.toULong()))
+        return KvResult.Ok(KvOutput.DeletedMulti(count.toULong()))
     }
 
-    private fun encodeValue(value: KvValue): String {
-        val json = org.json.JSONObject().apply {
-            put("data", android.util.Base64.encodeToString(value.data, android.util.Base64.NO_WRAP))
-            put("version", value.version.toLong())
-            put("createdAt", value.createdAt.toLong())
-            put("updatedAt", value.updatedAt.toLong())
-        }
-        return json.toString()
-    }
+    private fun encodeValue(v: KvValue): String = org.json.JSONObject().apply {
+        put("data", android.util.Base64.encodeToString(v.data, android.util.Base64.NO_WRAP))
+        put("version", v.version.toLong())
+        put("createdAt", v.createdAt.toLong())
+        put("updatedAt", v.updatedAt.toLong())
+    }.toString()
 
-    private fun decodeValue(encoded: String): KvValue? {
-        return try {
-            val json = org.json.JSONObject(encoded)
-            KvValue(
-                data = android.util.Base64.decode(json.getString("data"), android.util.Base64.NO_WRAP),
-                version = json.getLong("version").toULong(),
-                createdAt = json.getLong("createdAt").toULong(),
-                updatedAt = json.getLong("updatedAt").toULong()
-            )
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    override fun close() {
-    }
+    private fun decodeValue(s: String): KvValue? = try {
+        val j = org.json.JSONObject(s)
+        KvValue(android.util.Base64.decode(j.getString("data"), android.util.Base64.NO_WRAP),
+            j.getLong("version").toULong(), j.getLong("createdAt").toULong(), j.getLong("updatedAt").toULong())
+    } catch (e: Exception) { null }
 }
 
 class LocationHandler(private val context: android.content.Context) : EffectHandler<LocationOperation, LocationResult> {
-
-    override suspend fun handle(operation: LocationOperation): LocationResult {
-        return LocationResult.Error(
-            LocationError.NotSupported
-        )
-    }
-
-    override fun close() {
-    }
+    override suspend fun handle(operation: LocationOperation): LocationResult = LocationResult.Error(LocationError.NotSupported)
 }
 
 class CameraHandler(private val context: android.content.Context) : EffectHandler<CameraOperation, CameraResult> {
-
-    override suspend fun handle(operation: CameraOperation): CameraResult {
-        return when (operation) {
-            is CameraOperation.CheckPermission -> checkPermission()
-            is CameraOperation.RequestPermission -> {
-                CameraResult.Error(
-                    CameraError.Internal(
-                        message = "Permission request must be handled by Activity"
-                    )
-                )
-            }
-            is CameraOperation.GetCapabilities -> getCapabilities()
-            is CameraOperation.CapturePhoto -> {
-                CameraResult.Error(
-                    CameraError.Internal(
-                        message = "Photo capture must be handled by Activity"
-                    )
-                )
-            }
-            is CameraOperation.PickFromGallery -> {
-                CameraResult.Error(
-                    CameraError.Internal(
-                        message = "Gallery pick must be handled by Activity"
-                    )
-                )
-            }
-            is CameraOperation.CancelPending -> {
-                CameraResult.Ok(CameraOutput.Cancelled)
-            }
+    override suspend fun handle(operation: CameraOperation): CameraResult = when (operation) {
+        is CameraOperation.CheckPermission -> {
+            val granted = androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            CameraResult.Ok(CameraOutput.PermissionStatus(if (granted) PermissionStatus.Granted else PermissionStatus.NotDetermined))
         }
-    }
-
-    private fun checkPermission(): CameraResult {
-        val permission = android.Manifest.permission.CAMERA
-        val status = when (androidx.core.content.ContextCompat.checkSelfPermission(context, permission)) {
-            android.content.pm.PackageManager.PERMISSION_GRANTED -> PermissionStatus.Granted
-            else -> PermissionStatus.NotDetermined
-        }
-        return CameraResult.Ok(CameraOutput.PermissionStatus(status))
-    }
-
-    private fun getCapabilities(): CameraResult {
-        val cameraManager = context.getSystemService(android.content.Context.CAMERA_SERVICE) as android.hardware.camera2.CameraManager
-
-        var hasFront = false
-        var hasBack = false
-        var hasFlash = false
-
-        try {
-            for (cameraId in cameraManager.cameraIdList) {
-                val characteristics = cameraManager.getCameraCharacteristics(cameraId)
-                val facing = characteristics.get(android.hardware.camera2.CameraCharacteristics.LENS_FACING)
-
-                when (facing) {
-                    android.hardware.camera2.CameraCharacteristics.LENS_FACING_FRONT -> hasFront = true
-                    android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK -> hasBack = true
-                }
-
-                val flashAvailable = characteristics.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE)
-                if (flashAvailable == true) hasFlash = true
-            }
-        } catch (e: Exception) {
-            return CameraResult.Error(
-                CameraError.Unavailable(reason = e.message ?: "Failed to query cameras")
-            )
-        }
-
-        val isEmulator = android.os.Build.FINGERPRINT.contains("generic") ||
-                android.os.Build.FINGERPRINT.contains("emulator") ||
-                android.os.Build.MODEL.contains("Emulator") ||
-                android.os.Build.MODEL.contains("Android SDK")
-
-        return CameraResult.Ok(
-            CameraOutput.Capabilities(
-                CameraCapabilities(
-                    hasFrontCamera = hasFront,
-                    hasBackCamera = hasBack,
-                    hasFlash = hasFlash,
-                    hasTorch = hasFlash,
-                    supportsHeic = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q,
-                    supportsVideo = true,
-                    maxPhotoResolution = null,
-                    isSimulator = isEmulator,
-                    platform = CameraPlatform.Android
-                )
-            )
-        )
-    }
-
-    override fun close() {
+        else -> CameraResult.Error(CameraError.Internal("Must be handled by Activity"))
     }
 }
 
 class CryptoHandler : EffectHandler<CryptoOperation, CryptoResult> {
-
-    override suspend fun handle(operation: CryptoOperation): CryptoResult {
-        return withContext(Dispatchers.Default) {
+    override suspend fun handle(operation: CryptoOperation): CryptoResult = withContext(Dispatchers.Default) {
+        try {
             when (operation) {
-                is CryptoOperation.Hash -> hash(operation.algorithm, operation.data)
-                is CryptoOperation.GenerateKey -> generateKey(operation.algorithm)
-                is CryptoOperation.RandomBytes -> randomBytes(operation.length)
-                else -> CryptoResult.Error(
-                    CryptoError.NotSupported(operation = operation::class.simpleName ?: "Unknown")
-                )
-            }
-        }
-    }
-
-    private fun hash(algorithm: HashAlgorithm, data: ByteArray): CryptoResult {
-        val algorithmName = when (algorithm) {
-            HashAlgorithm.Sha256 -> "SHA-256"
-            HashAlgorithm.Sha384 -> "SHA-384"
-            HashAlgorithm.Sha512 -> "SHA-512"
-        }
-
-        return try {
-            val digest = java.security.MessageDigest.getInstance(algorithmName)
-            val hash = digest.digest(data)
-            CryptoResult.Ok(CryptoOutput.Hash(hash))
-        } catch (e: Exception) {
-            CryptoResult.Error(
-                CryptoError.Internal(message = e.message ?: "Hash failed")
-            )
-        }
-    }
-
-    private fun generateKey(algorithm: KeyAlgorithm): CryptoResult {
-        return try {
-            val keyGen = when (algorithm) {
-                KeyAlgorithm.Aes256 -> {
-                    javax.crypto.KeyGenerator.getInstance("AES").apply {
-                        init(256, java.security.SecureRandom())
-                    }
+                is CryptoOperation.Hash -> {
+                    val digest = java.security.MessageDigest.getInstance(when(operation.algorithm) {
+                        HashAlgorithm.Sha256 -> "SHA-256"
+                        HashAlgorithm.Sha384 -> "SHA-384"
+                        HashAlgorithm.Sha512 -> "SHA-512"
+                    })
+                    CryptoResult.Ok(CryptoOutput.Hash(digest.digest(operation.data)))
                 }
+                is CryptoOperation.RandomBytes -> {
+                    val b = ByteArray(operation.length.toInt())
+                    java.security.SecureRandom().nextBytes(b)
+                    CryptoResult.Ok(CryptoOutput.RandomBytes(b))
+                }
+                else -> CryptoResult.Error(CryptoError.NotSupported(operation::class.simpleName ?: ""))
             }
-            val key = keyGen.generateKey()
-            CryptoResult.Ok(CryptoOutput.Key(key.encoded))
-        } catch (e: Exception) {
-            CryptoResult.Error(
-                CryptoError.Internal(message = e.message ?: "Key generation failed")
-            )
-        }
-    }
-
-    private fun randomBytes(length: UInt): CryptoResult {
-        return try {
-            val bytes = ByteArray(length.toInt())
-            java.security.SecureRandom().nextBytes(bytes)
-            CryptoResult.Ok(CryptoOutput.RandomBytes(bytes))
-        } catch (e: Exception) {
-            CryptoResult.Error(
-                CryptoError.Internal(message = e.message ?: "Random generation failed")
-            )
-        }
-    }
-
-    override fun close() {
+        } catch (e: Exception) { CryptoResult.Error(CryptoError.Internal(e.message ?: "")) }
     }
 }
 
 class PushHandler(private val context: android.content.Context) : EffectHandler<PushOperation, PushResult> {
-
-    override suspend fun handle(operation: PushOperation): PushResult {
-        return when (operation) {
-            is PushOperation.RequestToken -> requestToken()
-            is PushOperation.CheckPermission -> checkPermission()
-            else -> PushResult.Error(
-                PushError.NotSupported
-            )
+    override suspend fun handle(operation: PushOperation): PushResult = try {
+        when (operation) {
+            is PushOperation.RequestToken -> {
+                val token = com.google.android.gms.tasks.Tasks.await(com.google.firebase.messaging.FirebaseMessaging.getInstance().token)
+                PushResult.Ok(PushOutput.Token(token))
+            }
+            else -> PushResult.Error(PushError.NotSupported)
         }
-    }
-
-    private suspend fun requestToken(): PushResult {
-        return try {
-            val token = kotlinx.coroutines.tasks.await(
-                com.google.firebase.messaging.FirebaseMessaging.getInstance().token
-            )
-            PushResult.Ok(PushOutput.Token(token))
-        } catch (e: Exception) {
-            PushResult.Error(
-                PushError.RegistrationFailed(message = e.message ?: "Failed to get FCM token")
-            )
-        }
-    }
-
-    private fun checkPermission(): PushResult {
-        val enabled = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            androidx.core.content.ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.POST_NOTIFICATIONS
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        } else {
-            androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
-        }
-
-        return PushResult.Ok(
-            PushOutput.PermissionStatus(
-                if (enabled) PermissionStatus.Granted else PermissionStatus.Denied
-            )
-        )
-    }
-
-    override fun close() {
-    }
+    } catch (e: Exception) { PushResult.Error(PushError.Internal(e.message ?: "")) }
 }

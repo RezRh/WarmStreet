@@ -15,6 +15,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
@@ -26,19 +27,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.warmstreet.ui.theme.WarmStreetTheme
+import com.warmstreet.ui.components.ErrorBoundary
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.lifecycleScope
 import com.warmstreet.shared.*
-import com.warmstreet.ui.theme.WarmStreetTheme
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -76,14 +82,18 @@ class MainActivity : ComponentActivity() {
 
         setupActivityResultLaunchers()
 
-        core.setActivityCallbacks(
-            onRequestCameraPermission = { callback -> requestCameraPermission(callback) },
-            onCapturePhoto = { config, callback -> capturePhoto(config, callback) },
-            onPickFromGallery = { config, callback -> pickFromGallery(config, callback) },
-            onRequestNotificationPermission = { callback -> requestNotificationPermission(callback) },
-            onRequestLocationPermission = { callback -> requestLocationPermission(callback) },
-            onOpenAppSettings = { openAppSettings() }
-        )
+        lifecycleScope.launch {
+            core.commands.collect { command ->
+                when (command) {
+                    is Core.CoreCommand.RequestCameraPermission -> requestCameraPermission(command.callback)
+                    is Core.CoreCommand.CapturePhoto -> capturePhoto(command.config, command.callback)
+                    is Core.CoreCommand.PickFromGallery -> pickFromGallery(command.config, command.callback)
+                    is Core.CoreCommand.RequestNotificationPermission -> requestNotificationPermission(command.callback)
+                    is Core.CoreCommand.RequestLocationPermission -> requestLocationPermission(command.callback)
+                    is Core.CoreCommand.OpenAppSettings -> openAppSettings()
+                }
+            }
+        }
 
         handleIntent(intent)
 
@@ -97,7 +107,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     ErrorBoundary {
-                        LifecycleHandler(core)
                         WarmStreetApp(core)
                     }
                 }
@@ -623,82 +632,5 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun LifecycleHandler(core: Core) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START -> core.update(Event.LifecycleStarted)
-                Lifecycle.Event.ON_RESUME -> core.update(Event.LifecycleResumed)
-                Lifecycle.Event.ON_PAUSE -> core.update(Event.LifecyclePaused)
-                Lifecycle.Event.ON_STOP -> core.update(Event.LifecycleStopped)
-                else -> {}
-            }
-        }
-
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-}
-
-@Composable
-fun ErrorBoundary(content: @Composable () -> Unit) {
-    var error by androidx.compose.runtime.remember { mutableStateOf<Throwable?>(null) }
-
-    if (error != null) {
-        ErrorScreen(
-            error = error!!,
-            onRetry = { error = null }
-        )
-    } else {
-        try {
-            content()
-        } catch (e: Throwable) {
-            LaunchedEffect(e) {
-                Log.e("ErrorBoundary", "Caught error in composition", e)
-                error = e
-            }
-        }
-    }
-}
-
-@Composable
-fun ErrorScreen(error: Throwable, onRetry: () -> Unit) {
-    androidx.compose.foundation.layout.Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
-    ) {
-        androidx.compose.material3.Text(
-            text = "Something went wrong",
-            style = MaterialTheme.typography.headlineMedium
-        )
-        androidx.compose.foundation.layout.Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-        androidx.compose.material3.Text(
-            text = error.message ?: "Unknown error",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error
-        )
-        androidx.compose.foundation.layout.Spacer(
-            modifier = Modifier.height(24.dp)
-        )
-        androidx.compose.material3.Button(onClick = onRetry) {
-            androidx.compose.material3.Text("Retry")
-        }
-    }
-}
-
-private val Modifier.height: (Int) -> Modifier
-    get() = { this }
-
-private val Int.dp: Int
-    get() = this
 
 private const val MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024
