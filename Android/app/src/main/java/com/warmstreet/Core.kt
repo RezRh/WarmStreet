@@ -9,6 +9,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.warmstreet.capabilities.*
 import com.warmstreet.shared.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MediaType.Companion.toMediaType
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -402,9 +404,13 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
 
     private fun executeRequest(request: HttpRequest): HttpResult {
         val url = try {
-            okhttp3.HttpUrl.Builder()
-                .parse(request.url.asStr())
-                .build()
+            okhttp3.HttpUrl.parse(request.url.asStr())
+                ?: return HttpResult.Error(
+                    HttpError.InvalidUrl(
+                        url = request.url.asStr(),
+                        reason = "Invalid URL format"
+                    )
+                )
         } catch (e: Exception) {
             return HttpResult.Error(
                 HttpError.InvalidUrl(
@@ -422,8 +428,8 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
 
         val body = request.body?.let { bytes ->
             val contentType = request.headers.get("Content-Type")
-                ?.let { okhttp3.MediaType.parse(it) }
-                ?: okhttp3.MediaType.parse("application/octet-stream")
+                ?.toMediaTypeOrNull()
+                ?: "application/octet-stream".toMediaTypeOrNull()
             okhttp3.RequestBody.create(contentType, bytes)
         }
 
@@ -445,14 +451,14 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
             val duration = System.currentTimeMillis() - startTime
 
             val responseHeaders = HttpHeaders()
-            for ((name, value) in response.headers()) {
+            for ((name, value) in response.headers) {
                 try {
                     responseHeaders.insert(name, value)
                 } catch (e: Exception) {
                 }
             }
 
-            val responseBody = response.body()?.bytes() ?: ByteArray(0)
+            val responseBody = response.body?.bytes() ?: ByteArray(0)
 
             if (responseBody.size > request.maxResponseSize) {
                 return HttpResult.Error(
@@ -465,7 +471,7 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
 
             HttpResult.Ok(
                 HttpResponse(
-                    status = response.code().toUShort(),
+                    status = response.code.toUShort(),
                     headers = responseHeaders,
                     body = responseBody,
                     requestId = request.requestId,
@@ -482,21 +488,21 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
         } catch (e: java.net.UnknownHostException) {
             HttpResult.Error(
                 HttpError.DnsError(
-                    host = url.host(),
+                    host = url.host,
                     message = e.message ?: "Unknown host"
                 )
             )
         } catch (e: javax.net.ssl.SSLException) {
             HttpResult.Error(
                 HttpError.TlsError(
-                    host = url.host(),
+                    host = url.host,
                     message = e.message ?: "TLS error"
                 )
             )
         } catch (e: java.io.IOException) {
             HttpResult.Error(
                 HttpError.ConnectionError(
-                    host = url.host(),
+                    host = url.host,
                     message = e.message ?: "Connection error"
                 )
             )
@@ -504,8 +510,8 @@ class HttpHandler : EffectHandler<HttpOperation, HttpResult> {
     }
 
     override fun close() {
-        client.dispatcher().executorService().shutdown()
-        client.connectionPool().evictAll()
+        client.dispatcher.executorService.shutdown()
+        client.connectionPool.evictAll()
     }
 }
 
