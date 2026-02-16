@@ -36,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {
@@ -47,6 +48,7 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-process:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation(platform("androidx.compose:compose-bom:2023.08.00"))
     implementation("androidx.compose.ui:ui")
@@ -65,12 +67,12 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
     implementation("com.google.firebase:firebase-messaging")
-    
-    // Accompanist for Permissions (optional but helpful, using manual config if needed, here just core)
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
     
     // Liquid Glass Dependencies
     implementation("dev.chrisbanes.haze:haze:0.7.0")
     implementation("androidx.compose.animation:animation-graphics:1.7.0")
+    implementation("androidx.compose.material:material-icons-extended")
     
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

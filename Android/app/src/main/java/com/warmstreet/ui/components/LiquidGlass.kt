@@ -62,7 +62,7 @@ fun Modifier.liquidGlassEffect(
         .haze(
             state = hazeState,
             style = HazeStyle(
-                backgroundColor = Color.White.copy(alpha = 0.05f),
+                tint = Color.White.copy(alpha = 0.05f),
                 blurRadius = 20.dp,
                 noiseFactor = 0.02f // Adds a "silk" texture
             )

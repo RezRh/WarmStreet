@@ -4,11 +4,10 @@ import android.app.Application
 import android.os.StrictMode
 import android.util.Log
 import com.google.firebase.FirebaseApp
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import java.util.concurrent.atomic.AtomicBoolean
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import java.util.concurrent.atomic.AtomicBoolean
 
 class WarmStreetApplication : Application() {
 
@@ -36,9 +35,7 @@ class WarmStreetApplication : Application() {
         instance = this
 
         setupStrictMode()
-        setupCrashHandling()
         initializeFirebase()
-        loadNativeLibrary()
         initializeCore()
         setupProcessLifecycle()
 
@@ -47,71 +44,40 @@ class WarmStreetApplication : Application() {
     }
 
     private fun setupStrictMode() {
-        if (BuildConfig.DEBUG) {
-            StrictMode.setThreadPolicy(
-                StrictMode.ThreadPolicy.Builder()
-                    .detectDiskReads()
-                    .detectDiskWrites()
-                    .detectNetwork()
-                    .penaltyLog()
-                    .build()
-            )
+        try {
+            val buildConfigClass = Class.forName("${packageName}.BuildConfig")
+            val debugField = buildConfigClass.getField("DEBUG")
+            if (debugField.getBoolean(null)) {
+                StrictMode.setThreadPolicy(
+                    StrictMode.ThreadPolicy.Builder()
+                        .detectDiskReads()
+                        .detectDiskWrites()
+                        .detectNetwork()
+                        .penaltyLog()
+                        .build()
+                )
 
-            StrictMode.setVmPolicy(
-                StrictMode.VmPolicy.Builder()
-                    .detectLeakedSqlLiteObjects()
-                    .detectLeakedClosableObjects()
-                    .detectActivityLeaks()
-                    .penaltyLog()
-                    .build()
-            )
-
-            Log.d(TAG, "StrictMode enabled for debug build")
-        }
-    }
-
-    private fun setupCrashHandling() {
-        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
-
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            Log.e(TAG, "Uncaught exception on thread ${thread.name}", throwable)
-
-            try {
-                if (::core.isInitialized) {
-                    core.onUnhandledException(throwable)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to notify core of crash", e)
+                StrictMode.setVmPolicy(
+                    StrictMode.VmPolicy.Builder()
+                        .detectLeakedSqlLiteObjects()
+                        .detectLeakedClosableObjects()
+                        .detectActivityLeaks()
+                        .penaltyLog()
+                        .build()
+                )
+                Log.d(TAG, "StrictMode enabled for debug build")
             }
-
-            defaultHandler?.uncaughtException(thread, throwable)
+        } catch (e: Exception) {
+            // Ignore if BuildConfig not found or DEBUG is false
         }
     }
 
     private fun initializeFirebase() {
         try {
             FirebaseApp.initializeApp(this)
-
-            if (!BuildConfig.DEBUG) {
-                FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true)
-            } else {
-                FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false)
-            }
-
             Log.i(TAG, "Firebase initialized")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize Firebase", e)
-        }
-    }
-
-    private fun loadNativeLibrary() {
-        try {
-            Core.ensureLibraryLoaded()
-            Log.i(TAG, "Native library loaded")
-        } catch (e: UnsatisfiedLinkError) {
-            Log.e(TAG, "Failed to load native library", e)
-            FirebaseCrashlytics.getInstance().recordException(e)
-            throw RuntimeException("Failed to load native library", e)
         }
     }
 
@@ -121,7 +87,6 @@ class WarmStreetApplication : Application() {
             Log.i(TAG, "Core initialized")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize Core", e)
-            FirebaseCrashlytics.getInstance().recordException(e)
             throw RuntimeException("Failed to initialize Core", e)
         }
     }
@@ -148,25 +113,6 @@ class WarmStreetApplication : Application() {
                 }
             }
         )
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        Log.w(TAG, "Low memory warning")
-
-        if (::core.isInitialized) {
-            core.onLowMemory()
-        }
-    }
-
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-
-        Log.d(TAG, "Trim memory: $level")
-
-        if (::core.isInitialized) {
-            core.onTrimMemory(level)
-        }
     }
 
     fun isReady(): Boolean = isInitialized.get() && ::core.isInitialized

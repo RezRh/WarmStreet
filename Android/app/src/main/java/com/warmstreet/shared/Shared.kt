@@ -40,7 +40,10 @@ sealed class ViewState {
         val selectedDetail: CaseDetail? = null,
         val stagedPhoto: CapturedImage? = null,
         val stagedCrop: CapturedImage? = null,
-        val feedView: FeedViewMode = FeedViewMode.Map
+        val feedView: FeedViewMode = FeedViewMode.Map,
+        val detectionCount: Int = 0,
+        val topConfidence: Float = 0f,
+        val areaCenter: Pair<Double, Double>? = null
     ) : ViewState()
     data class Error(
         val title: String = "Error",
@@ -98,6 +101,8 @@ sealed class Event {
     data class RadiusChanged(val radius: Double) : Event()
     object ConfirmRadius : Event()
     data class LocationPinDropped(val location: Location) : Event()
+    object OpenAppSettings : Event()
+    data class RadiusSelected(val meters: Long) : Event()
     
     // Camera
     object CapturePhotoRequested : Event()
@@ -121,6 +126,12 @@ sealed class Event {
     data class OAuthError(val error: String, val description: String?) : Event()
     data class OAuthCallback(val code: String, val state: String?) : Event()
     
+    // KeyValue Result
+    data class KeyValueResult(val result: com.warmstreet.shared.KvResult) : Event()
+
+    // Push
+    data class PushReceived(val payload: PushPayload) : Event()
+
     // Lifecycle
     object LifecycleStarted : Event()
     object LifecycleResumed : Event()
@@ -131,13 +142,20 @@ sealed class Event {
 data class CreateCasePayload(
     val photo: CapturedImage,
     val location: Location,
-    val description: String
+    val description: String?,
+    val woundSeverity: Int? = null
 )
+
+sealed class PushPayload {
+    data class NewRescue(val caseId: String, val location: Location) : PushPayload()
+    data class Mute(val caseId: String, val claimedBy: String) : PushPayload()
+    data class CaseUpdate(val caseId: String, val newStatus: String) : PushPayload()
+}
 
 sealed class Effect {
     object Render : Effect()
     data class Http(val operation: HttpOperation, val callback: (HttpResult) -> Event) : Effect()
-    data class Kv(val operation: KvOperation, val callback: (KvResult) -> Event) : Effect()
+    data class Kv(val operation: KvOperation, val callback: (com.warmstreet.shared.KvResult) -> Event) : Effect()
     data class Crypto(val operation: CryptoOperation, val callback: (CryptoResult) -> Event) : Effect()
     data class Camera(val operation: CameraOperation, val callback: (CameraResult) -> Event) : Effect()
     data class Push(val operation: PushOperation, val callback: (PushResult) -> Event) : Effect()
@@ -197,17 +215,10 @@ sealed class HttpError {
 
 // KV Capabilities
 sealed class KvOperation {
-    data class Get(val key: KvKey) : KvOperation()
-    data class Set(val key: KvKey, val value: ByteArray, val ifVersion: Long?) : KvOperation()
-    data class Delete(val key: KvKey, val ifVersion: Long?) : KvOperation()
-    data class Exists(val key: KvKey) : KvOperation()
-    data class List(val namespace: KeyNamespace, val prefix: String?, val limit: UInt, val cursor: String?) : KvOperation()
-    data class GetMulti(val keys: kotlin.collections.List<KvKey>) : KvOperation()
-    data class DeleteMulti(val keys: kotlin.collections.List<KvKey>) : KvOperation()
+    data class Get(val key: String) : KvOperation()
+    data class Set(val key: String, val value: ByteArray) : KvOperation()
+    data class Delete(val key: String) : KvOperation()
 }
-
-data class KvKey(private val key: String) { fun raw(): String = key }
-data class KeyNamespace(private val prefix: String) { fun prefix(): String = prefix }
 
 sealed class KvResult {
     data class Ok(val output: KvOutput) : KvResult()
@@ -215,21 +226,13 @@ sealed class KvResult {
 }
 
 sealed class KvOutput {
-    data class Value(val value: KvValue?) : KvOutput()
-    data class Written(val version: ULong) : KvOutput()
-    data class Deleted(val existed: Boolean) : KvOutput()
-    data class Exists(val exists: Boolean) : KvOutput()
-    data class List(val entries: kotlin.collections.List<KvListEntry>, val nextCursor: String?, val hasMore: Boolean) : KvOutput()
-    data class Multi(val values: kotlin.collections.List<KvValue?>) : KvOutput()
-    data class DeletedMulti(val deletedCount: ULong) : KvOutput()
+    data class Value(val value: ByteArray?) : KvOutput()
+    object Written : KvOutput()
+    object Deleted : KvOutput()
 }
-
-data class KvValue(val data: ByteArray, val version: ULong, val createdAt: ULong, val updatedAt: ULong)
-data class KvListEntry(val key: String, val version: ULong, val size: ULong, val updatedAt: ULong)
 
 sealed class KvError {
     data class Storage(val code: StorageErrorCode, val message: String, val retryable: Boolean) : KvError()
-    data class VersionMismatch(val expected: ULong, val found: ULong) : KvError()
 }
 
 enum class StorageErrorCode { IoError, Corrupted }
@@ -371,6 +374,7 @@ sealed class PushError {
 // Location Capabilities
 sealed class LocationOperation {
     object RequestPermission : LocationOperation()
+    object GetLocation : LocationOperation()
 }
 
 sealed class LocationResult {
@@ -378,10 +382,13 @@ sealed class LocationResult {
     data class Error(val error: LocationError) : LocationResult()
 }
 
-data class LocationOutput(val status: PermissionStatus? = null) {
+data class LocationOutput(
+    val status: PermissionStatus? = null,
+    val location: Location? = null
+) {
     companion object {
         fun PermissionStatus(fineLocation: Boolean, coarseLocation: Boolean) = LocationOutput(
-            if (fineLocation || coarseLocation) PermissionStatus.Granted else PermissionStatus.Denied
+            status = if (fineLocation || coarseLocation) PermissionStatus.Granted else PermissionStatus.Denied
         )
     }
 }

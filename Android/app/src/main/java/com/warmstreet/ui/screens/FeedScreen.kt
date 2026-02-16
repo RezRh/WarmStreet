@@ -4,17 +4,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
 import androidx.compose.ui.res.painterResource
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.haze
 import com.warmstreet.Core
 import com.warmstreet.shared.Event
 import com.warmstreet.shared.ViewState
+import com.warmstreet.shared.FeedViewMode
 import com.warmstreet.ui.components.LocalHazeState
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.warmstreet.shared.Event
-import com.warmstreet.shared.ViewState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,11 +24,11 @@ fun FeedScreen(core: Core) {
     if (state !is ViewState.Ready) return
 
     val hazeState = remember { HazeState() }
-    val currentTab = if (state.feedView == "Map") 0 else 1
+    val currentTab = if (state.feedView == FeedViewMode.Map) 0 else 1
     CompositionLocalProvider(LocalHazeState provides hazeState) {
         Scaffold(
             bottomBar = {
-                if (core.view.stagedPhoto == null) {
+                if (state.stagedPhoto == null) {
                     com.warmstreet.ui.components.GlassNavigationBar {
                         NavigationBarItem(
                             icon = { Icon(painter = painterResource(android.R.drawable.ic_dialog_map), contentDescription = "Map") },
@@ -92,7 +92,7 @@ fun FeedScreen(core: Core) {
                 Box(modifier = Modifier
                     .fillMaxSize()
                     .background(Brush.verticalGradient(listOf(Color(0xFF0D1117), Color(0xFF161B22))))
-                    .hazeSource(state = hazeState)
+                    .haze(state = hazeState)
                     .padding(padding)
                 ) {
                      if (currentTab == 0) {
@@ -105,7 +105,7 @@ fun FeedScreen(core: Core) {
                 // Overlay Layer (Glass components here)
                 Box(modifier = Modifier.fillMaxSize().padding(padding)) {
                     // Full-screen overlay for Report
-                    if (core.view.stagedPhoto != null) {
+                    if (state.stagedPhoto != null) {
                         ReportScreen(core)
                     }
                 }
@@ -115,7 +115,8 @@ fun FeedScreen(core: Core) {
             if (state.selectedDetail != null) {
                 CaseDetailSheet(
                     detail = state.selectedDetail!!,
-                    onDismiss = { core.update(Event.CaseDismissed) }
+                    onDismiss = { core.update(Event.CaseDismissed) },
+                    core = core
                 )
             }
         }

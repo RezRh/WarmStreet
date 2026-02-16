@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.warmstreet.shared.Event
-import com.warmstreet.shared.KeyValueOperation
-import com.warmstreet.shared.KeyValueOutput
+import com.warmstreet.shared.KvOperation
+import com.warmstreet.shared.KvOutput
+import com.warmstreet.shared.KvResult
+import com.warmstreet.shared.StorageErrorCode
 
 class KeyValueHandler(context: Context) {
     private val masterKey = MasterKey.Builder(context)
@@ -20,23 +22,21 @@ class KeyValueHandler(context: Context) {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-    fun handle(operation: KeyValueOperation): Event {
+    fun handle(operation: KvOperation): KvResult {
         return when (operation) {
-            is KeyValueOperation.Get -> {
+            is KvOperation.Get -> {
                 val value = sharedPreferences.getString(operation.key, null)?.toByteArray()
-                // Assuming generic generated Value type or list<u8>
-                 Event.KeyValueResult(KeyValueOutput.Get(value = value?.toList()))
+                KvResult.Ok(KvOutput.Value(value))
             }
-            is KeyValueOperation.Set -> {
-                val strVal = String(operation.value.toByteArray()) // Simple string storage for now
+            is KvOperation.Set -> {
+                val strVal = String(operation.value)
                 sharedPreferences.edit().putString(operation.key, strVal).apply()
-                 Event.KeyValueResult(KeyValueOutput.Set)
+                KvResult.Ok(KvOutput.Written)
             }
-            is KeyValueOperation.Delete -> {
+            is KvOperation.Delete -> {
                 sharedPreferences.edit().remove(operation.key).apply()
-                 Event.KeyValueResult(KeyValueOutput.Delete)
+                KvResult.Ok(KvOutput.Deleted)
             }
-            else -> Event.KeyValueResult(KeyValueOutput.Failure("Unsupported operation"))
         }
     }
 }

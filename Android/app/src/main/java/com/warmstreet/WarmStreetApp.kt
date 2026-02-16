@@ -2,7 +2,6 @@ package com.warmstreet
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -30,18 +29,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.warmstreet.shared.Event
-import com.warmstreet.shared.ViewModel
 import com.warmstreet.shared.ViewState
 import com.warmstreet.ui.components.ErrorDialog
 import com.warmstreet.ui.components.FullScreenError
 import com.warmstreet.ui.components.FullScreenLoading
 import com.warmstreet.ui.components.LoadingOverlay
-import com.warmstreet.ui.screens.CameraPreviewScreen
-import com.warmstreet.ui.screens.LocationPermissionScreen
-import com.warmstreet.ui.screens.LoginScreen
-import com.warmstreet.ui.screens.PinDropScreen
-import com.warmstreet.ui.screens.RadiusPickerScreen
-import com.warmstreet.ui.screens.ReadyScreen
+import com.warmstreet.ui.screens.*
 import kotlinx.coroutines.launch
 
 @Composable
@@ -169,7 +162,7 @@ fun WarmStreetApp(core: Core) {
 
                         RadiusPickerScreen(
                             location = state.location,
-                            selectedRadius = state.radius,
+                            radius = state.radius,
                             onRadiusChanged = { radius ->
                                 core.update(Event.RadiusChanged(radius))
                             },
@@ -251,7 +244,6 @@ fun WarmStreetApp(core: Core) {
         )
     }
 }
-
 
 private fun createTransitionSpec(
     initialState: ViewState,

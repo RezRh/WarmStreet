@@ -22,12 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.warmstreet.shared.CaptureConfig
+import com.warmstreet.shared.*
 
 @Composable
 fun CameraPreviewScreen(
     config: CaptureConfig,
-    onPhotoCaptured: (ByteArray) -> Unit,
+    onPhotoCaptured: (CapturedImage) -> Unit,
     onCancel: () -> Unit
 ) {
     Box(
@@ -72,8 +72,17 @@ fun CameraPreviewScreen(
 
             IconButton(
                 onClick = { 
-                    // Simulate capture with empty byte array for now
-                    onPhotoCaptured(ByteArray(0)) 
+                    // Simulate capture
+                    onPhotoCaptured(
+                        CapturedImage(
+                            data = ByteArray(0),
+                            format = ImageFormat.Jpeg,
+                            width = 0u,
+                            height = 0u,
+                            fileSize = 0uL,
+                            captureTimeMs = System.currentTimeMillis().toULong()
+                        )
+                    ) 
                 },
                 modifier = Modifier
                     .size(80.dp)
@@ -87,7 +96,6 @@ fun CameraPreviewScreen(
                 )
             }
             
-            // Spacer to balance the layout
             Spacer(modifier = Modifier.size(48.dp))
         }
     }

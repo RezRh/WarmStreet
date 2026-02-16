@@ -2,17 +2,29 @@ package com.warmstreet.ui.screens
 
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.warmstreet.ui.components.GlassSurface
 
 @Composable
-fun LoginScreen(core: Core) {
+fun LoginScreen(
+    onLogin: (String) -> Unit,
+    onContinueAsGuest: () -> Unit,
+    isLoading: Boolean
+) {
     val context = LocalContext.current
     
     Box(
@@ -40,7 +52,7 @@ fun LoginScreen(core: Core) {
             // Logo Section
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Icon(
-                    Icons.Default.Star, // Placeholder for shield
+                    Icons.Default.Star,
                     contentDescription = null,
                     modifier = Modifier.size(80.dp),
                     tint = Color(0xFF2196F3)
@@ -69,28 +81,32 @@ fun LoginScreen(core: Core) {
                 ) {
                     Text("Welcome Back", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     
-                    Button(
-                        onClick = {
-                            val url = "https://your-neon-auth-url/login?callback=warmstreet://auth"
-                            val intent = CustomTabsIntent.Builder().build()
-                            intent.launchUrl(context, Uri.parse(url))
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                        contentPadding = PaddingValues()
-                    ) {
-                        Box(
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White)
+                    } else {
+                        Button(
+                            onClick = { onLogin("google") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .fillMaxHeight()
-                                .background(Brush.linearGradient(listOf(Color(0xFF2196F3), Color(0xFF00BCD4))))
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
+                                .height(56.dp),
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                            contentPadding = PaddingValues()
                         ) {
-                            Text("Continue with Google", fontWeight = FontWeight.Bold, color = Color.White)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight()
+                                    .background(Brush.linearGradient(listOf(Color(0xFF2196F3), Color(0xFF00BCD4))))
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Continue with Google", fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+
+                        TextButton(onClick = onContinueAsGuest) {
+                            Text("Continue as Guest", color = Color.White.copy(alpha = 0.7f))
                         }
                     }
                 }

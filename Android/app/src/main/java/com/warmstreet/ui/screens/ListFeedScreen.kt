@@ -13,6 +13,8 @@ import com.warmstreet.Core
 import com.warmstreet.shared.Event
 import com.warmstreet.shared.CaseListItem
 import com.warmstreet.shared.ViewState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 
 @Composable
 fun ListFeedScreen(core: Core) {
@@ -21,7 +23,7 @@ fun ListFeedScreen(core: Core) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(state.listItems) { item ->
             CaseItemRow(item = item, onClick = {
-                core.update(Event.CaseMarkerTapped(caseId = item.id))
+                core.update(Event.CaseMarkerTapped(id = item.id))
             })
             Divider()
         }
@@ -41,7 +43,7 @@ fun CaseItemRow(item: CaseListItem, onClick: () -> Unit) {
         },
         leadingContent = {
             // Status dot
-            Box(modifier = Modifier.size(12.dp).androidx.compose.foundation.background(Color.Red, androidx.compose.foundation.shape.CircleShape))
+            Box(modifier = Modifier.size(12.dp).background(Color.Red, CircleShape))
         },
         modifier = Modifier.clickable(onClick = onClick)
     )

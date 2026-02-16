@@ -7,9 +7,32 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.warmstreet.shared.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class LocationHandler(private val context: Context) {
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+    suspend fun handle(operation: LocationOperation): LocationResult {
+        return when (operation) {
+            is LocationOperation.GetLocation -> getLocation()
+            else -> LocationResult.Error(LocationError.NotSupported)
+        }
+    }
+
+    private suspend fun getLocation(): LocationResult {
+        return suspendCoroutine { cont ->
+            getLastLocation(
+                onLocationFound = { lat, lng ->
+                    cont.resume(LocationResult.Ok(LocationOutput(location = Location(lat, lng))))
+                },
+                onError = {
+                    cont.resume(LocationResult.Error(LocationError.Internal("Failed to get location")))
+                }
+            )
+        }
+    }
 
     @SuppressLint("MissingPermission")
     fun getLastLocation(onLocationFound: (Double, Double) -> Unit, onError: () -> Unit) {

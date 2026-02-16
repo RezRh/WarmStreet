@@ -29,14 +29,7 @@ fun ErrorBoundary(content: @Composable () -> Unit) {
             onRetry = { error = null }
         )
     } else {
-        try {
-            content()
-        } catch (e: Throwable) {
-            LaunchedEffect(e) {
-                Log.e("ErrorBoundary", "Caught error in composition", e)
-                error = e
-            }
-        }
+        content()
     }
 }
 

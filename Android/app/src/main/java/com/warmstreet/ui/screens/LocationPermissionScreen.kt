@@ -1,56 +1,75 @@
 package com.warmstreet.ui.screens
 
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.warmstreet.Core
-import com.warmstreet.shared.Event
 
 @Composable
-fun LocationPermissionScreen(core: Core, onPinDrop: () -> Unit) {
-    val locationLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || 
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
-            // Permission granted, core will request location via handler -> sends event
-            // core.locationHandler.getLastLocation(...) called from Core logic or ViewState effect
-            // For now, simulate button press triggering location fetch in Core
-        } else {
-            // Denied
-        }
-    }
-
+fun LocationPermissionScreen(
+    permissionState: Any?,
+    onRequestPermission: () -> Unit,
+    onUseCurrentLocation: () -> Unit,
+    onDropPin: () -> Unit,
+    onOpenSettings: () -> Unit
+) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Enable Location", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
-        Text("We need your location to find nearby rescues.", modifier = Modifier.padding(16.dp))
-        
+        Text(
+            text = "Location Access",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "We need your location to show nearby cases",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // Text("Debug State: $permissionState")
+
+        Spacer(modifier = Modifier.height(32.dp))
+
         Button(
-            onClick = { 
-                locationLauncher.launch(arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ))
-            },
+            onClick = onRequestPermission,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Use My Current Location")
+            Text("Enable Location")
         }
-        
-        TextButton(onClick = onPinDrop) {
-            Text("Drop a Pin Instead")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onUseCurrentLocation,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Use Current Location")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onDropPin,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Choose on Map")
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        TextButton(onClick = onOpenSettings) {
+            Text("Open App Settings")
         }
     }
 }

@@ -11,6 +11,18 @@ import com.warmstreet.Core
 import com.warmstreet.shared.CaseDetail
 import com.warmstreet.shared.ClaimState
 import com.warmstreet.shared.Event
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.warmstreet.ui.components.GlassSurface
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
 // import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,7 +129,7 @@ fun CaseDetailSheet(detail: CaseDetail, onDismiss: () -> Unit, core: Core) {
                         }
                     }
                     ClaimState.ClaimedByMe -> {
-                         Column(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                                  Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50))
                                  Text("You claimed this rescue", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)

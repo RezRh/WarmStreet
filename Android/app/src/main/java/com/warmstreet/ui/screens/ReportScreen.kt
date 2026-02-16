@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.sp
 import com.warmstreet.Core
 import com.warmstreet.shared.CreateCasePayload
 import com.warmstreet.shared.Event
+import com.warmstreet.shared.ViewState
+import com.warmstreet.shared.Location
 import com.warmstreet.ui.components.GlassSurface
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,8 +37,8 @@ fun ReportScreen(core: Core) {
     val view = core.view
     var description by remember { mutableStateOf("") }
     var woundSeverity by remember { mutableStateOf(1f) }
-    
-    val imageData = view.stagedCrop ?: view.stagedPhoto
+    val state = view.state as? ViewState.Ready
+    val imageData = state?.stagedCrop?.data ?: state?.stagedPhoto?.data
     val bitmap = remember(imageData) {
         imageData?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
     }
@@ -85,7 +87,7 @@ fun ReportScreen(core: Core) {
                     }
                     
                     // AI Detection Badge
-                    if (view.detectionCount > 0) {
+                    if (state != null && state.detectionCount > 0) {
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
@@ -112,7 +114,7 @@ fun ReportScreen(core: Core) {
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    "${(view.topConfidence * 100).toInt()}%",
+                                    "${(state.topConfidence * 100).toInt()}%",
                                     color = Color.White.copy(alpha = 0.9f),
                                     fontSize = 11.sp,
                                     modifier = Modifier
@@ -193,11 +195,12 @@ fun ReportScreen(core: Core) {
             // Submit Button
             Button(
                 onClick = {
-                    val lat = view.areaCenter?.first ?: 0.0
-                    val lng = view.areaCenter?.second ?: 0.0
+                    val lat = state?.areaCenter?.first ?: 0.0
+                    val lng = state?.areaCenter?.second ?: 0.0
                     core.update(Event.CreateCaseRequested(
                         CreateCasePayload(
-                            location = Pair(lat, lng),
+                            photo = state?.stagedPhoto ?: state?.stagedCrop!!,
+                            location = Location(lat, lng),
                             description = if (description.isEmpty()) null else description,
                             woundSeverity = woundSeverity.toInt()
                         )
