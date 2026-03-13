@@ -1,2 +1,10 @@
-[default]
-windows = ["allow-all"]
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "default",
+  "description": "Default capabilities for WarmStreet",
+  "windows": ["*"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open"
+  ]
+}

@@ -84,30 +84,10 @@ pub struct Capabilities {
     pub camera: camera::Camera<Event>,
 }
 
-/*
-#[cfg(any(test, feature = "test-utils"))]
-pub mod testing {
-    use super::*;
-
-    pub fn mock_capabilities() -> Capabilities {
-        Capabilities {
-            http: AppHttp::default(),
-            kv: AppKv::default(),
-            render: AppRender::default(),
-            crypto: AppCrypto::default(),
-            location: AppLocation::default(),
-            push: AppPush::default(),
-            telemetry: AppTelemetry::default(),
-            #[cfg(feature = "camera")]
-            camera: AppCamera::default(),
-        }
-    }
-}
-
-#[cfg(test)]
+// Stub Default implementation for initial development
+// TODO: Implement proper mock capabilities with CapabilityContext
 impl Default for Capabilities {
     fn default() -> Self {
-        testing::mock_capabilities()
+        unimplemented!("Provide real Capabilities implementation")
     }
 }
-*/

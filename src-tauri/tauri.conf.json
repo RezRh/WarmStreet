@@ -29,20 +29,11 @@
     }
   },
   "bundle": {
-    "active": true,
+    "active": false,
     "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
     "category": "Utility",
     "shortDescription": "Zero-Latency Animal Rescue Coordination",
-    "longDescription": "WarmStreet connects citizens who spot injured street animals with verified volunteers and veterinarians — in under two seconds.",
-    "copyright": "AGPL-3.0",
-    "resources": []
+    "copyright": "AGPL-3.0"
   },
   "plugins": {
     "shell": {
