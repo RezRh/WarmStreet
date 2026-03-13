@@ -1,11 +1,8 @@
-use crux_kv::KeyValue;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::marker::PhantomData;
 use thiserror::Error;
 
-use crate::Event;
 
-pub type KvCapability = KeyValue<Event>;
 
 pub const MAX_KEY_LENGTH: usize = 512;
 pub const MAX_VALUE_SIZE: usize = 10 * 1024 * 1024;
@@ -451,6 +448,7 @@ pub enum KvOutput {
 pub struct KvListEntry {
     pub key: String,
     pub version: u64,
+#[allow(dead_code)]
     pub size: usize,
     pub updated_at: u64,
 }

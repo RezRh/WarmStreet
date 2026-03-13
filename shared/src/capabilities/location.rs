@@ -2,7 +2,6 @@ use crux_core::capability::{Capability, CapabilityContext, Operation};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::Event;
 
 #[derive(Clone)]
 pub struct Location<E> {
@@ -54,7 +53,6 @@ where
     }
 }
 
-pub type LocationCapability = Location<Event>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum LocationOperation {

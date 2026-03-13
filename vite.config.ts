@@ -12,8 +12,8 @@ export default defineConfig({
   // Prevent Vite from obfuscating symbols needed for Tauri IPC
   clearScreen: false,
   server: {
-    port: 1420,
-    strictPort: true,
+    port: 5173,
+    strictPort: false,
   },
   // Optimize for mobile WebViews - native-level startup speeds
   build: {

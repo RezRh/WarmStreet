@@ -1,7 +1,6 @@
 use crux_core::capability::{Capability, CapabilityContext, Operation};
 use serde::{Deserialize, Serialize};
 
-use crate::Event;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum TelemetryOperation {
@@ -119,4 +118,3 @@ where
     }
 }
 
-pub type TelemetryCapability = Telemetry<Event>;

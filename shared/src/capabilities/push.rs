@@ -2,7 +2,6 @@ use crux_core::capability::{Capability, CapabilityContext, Operation};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::Event;
 
 #[derive(Clone)]
 pub struct Push<E> {
@@ -73,7 +72,6 @@ where
     }
 }
 
-pub type PushCapability = Push<Event>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PushOperation {
