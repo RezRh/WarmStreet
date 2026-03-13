@@ -5,14 +5,35 @@ use std::time::Instant;
 use image::codecs::webp::WebPEncoder;
 use image::ImageReader as ImageReader;
 use image::{DynamicImage, ExtendedColorType, GenericImageView, ImageEncoder, Limits};
-use metrics::{counter, histogram};
+
 use thiserror::Error;
 use tokio::sync::Semaphore;
 use tracing::{instrument, warn};
 
-use crate::vision::Detection;
+/// Bounding box detection result
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Detection {
+    /// Bounding box [x1, y1, x2, y2] normalized to original image (0.0..1.0)
+    pub bbox: [f32; 4],
+    /// Detection confidence score (0.0..1.0)
+    pub confidence: f32,
+    /// Class ID from model
+    pub class_id: u32,
+}
 
-#[derive(Debug, Error)]
+/// Detection result with metadata
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct DetectionResult {
+    pub detections: Vec<Detection>,
+    pub truncated: bool,
+    pub candidates_before_nms: usize,
+    pub preprocess_ms: f64,
+    pub inference_ms: f64,
+    pub postprocess_ms: f64,
+}
+
+
+#[derive(Error, Debug)]
 pub enum ImageProcessingError {
     #[error("failed to decode image: {source}")]
     Decode {
@@ -33,7 +54,7 @@ pub enum ImageProcessingError {
         y1: f32,
         x2: f32,
         y2: f32,
-        reason: &'static str,
+        reason: String,
     },
 
     #[error("invalid expand factor: {value}, must be in [0.0, {max}]")]
@@ -115,11 +136,9 @@ impl ImageProcessor {
         bbox: NormalizedBbox,
         expand: f32,
     ) -> Result<Vec<u8>, ImageProcessingError> {
-        let start = Instant::now();
-        counter!("image.crop_and_strip.requests").increment(1);
+        let _start = Instant::now();
 
         let _permit = self.semaphore.try_acquire().map_err(|_| {
-            counter!("image.crop_and_strip.rejected").increment(1);
             ImageProcessingError::Overloaded
         })?;
 
@@ -130,16 +149,9 @@ impl ImageProcessor {
         .await
         .map_err(|_| ImageProcessingError::Timeout)?;
 
-        histogram!("image.crop_and_strip.duration_ms").record(start.elapsed().as_millis() as f64);
 
-        match &result {
-            Ok(data) => {
-                histogram!("image.crop_and_strip.output_size").record(data.len() as f64);
-            }
-            Err(e) => {
-                counter!("image.crop_and_strip.errors").increment(1);
-                warn!(error = %e, "crop_and_strip failed");
-            }
+        if let Err(e) = &result {
+            warn!(error = %e, "crop_and_strip failed");
         }
 
         result
@@ -150,11 +162,9 @@ impl ImageProcessor {
         &self,
         raw_bytes: Vec<u8>,
     ) -> Result<Vec<u8>, ImageProcessingError> {
-        let start = Instant::now();
-        counter!("image.resize_and_strip.requests").increment(1);
+        let _start = Instant::now();
 
         let _permit = self.semaphore.try_acquire().map_err(|_| {
-            counter!("image.resize_and_strip.rejected").increment(1);
             ImageProcessingError::Overloaded
         })?;
 
@@ -165,16 +175,9 @@ impl ImageProcessor {
         .await
         .map_err(|_| ImageProcessingError::Timeout)?;
 
-        histogram!("image.resize_and_strip.duration_ms").record(start.elapsed().as_millis() as f64);
 
-        match &result {
-            Ok(data) => {
-                histogram!("image.resize_and_strip.output_size").record(data.len() as f64);
-            }
-            Err(e) => {
-                counter!("image.resize_and_strip.errors").increment(1);
-                warn!(error = %e, "resize_and_strip failed");
-            }
+        if let Err(e) = &result {
+            warn!(error = %e, "resize_and_strip failed");
         }
 
         result
@@ -251,7 +254,7 @@ impl NormalizedBbox {
                 y1,
                 x2,
                 y2,
-                reason: "contains NaN or infinite value",
+                reason: "contains NaN or infinite value".to_string(),
             });
         }
         if x1 < 0.0 || y1 < 0.0 || x2 > 1.0 || y2 > 1.0 {
@@ -260,7 +263,7 @@ impl NormalizedBbox {
                 y1,
                 x2,
                 y2,
-                reason: "coordinates outside [0, 1] range",
+                reason: "coordinates outside [0, 1] range".to_string(),
             });
         }
         if x2 <= x1 || y2 <= y1 {
@@ -269,7 +272,7 @@ impl NormalizedBbox {
                 y1,
                 x2,
                 y2,
-                reason: "inverted or zero-area box",
+                reason: "inverted or zero-area box".to_string(),
             });
         }
         Ok(Self { x1, y1, x2, y2 })
@@ -345,7 +348,7 @@ pub fn merge_bboxes(detections: &[Detection]) -> Result<NormalizedBbox, ImagePro
             y1: y1 as f32,
             x2: x2 as f32,
             y2: y2 as f32,
-            reason: "failed to create merged bbox",
+            reason: "failed to create merged bbox".to_string(),
         })
 }
 
@@ -421,7 +424,7 @@ fn decode_image(
 
     reader.limits(limits);
 
-    let img = reader.decode()?;
+    let img = reader.decode().map_err(|e| ImageProcessingError::Decode { source: e })?;
     let (w, h) = img.dimensions();
     let pixels = w as u64 * h as u64;
 

@@ -7,8 +7,9 @@ use std::time::{Duration, Instant};
 use tracing::{debug, instrument, warn};
 
 
-// Re-export types from model.rs
-pub use crate::model::{Detection, DetectionResult, NormalizedBbox};
+// Re-export types from image_processing.rs
+pub use crate::image_processing::{Detection, DetectionResult, NormalizedBbox};
+
 
 // ============================================================================
 // Constants with explicit documentation

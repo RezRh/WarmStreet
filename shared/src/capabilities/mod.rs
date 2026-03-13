@@ -1,5 +1,5 @@
 mod crypto;
-mod http;
+pub mod http;
 mod kv;
 mod location;
 mod outbox;
@@ -7,7 +7,7 @@ mod push;
 mod telemetry;
 
 #[cfg(feature = "camera")]
-mod camera;
+pub mod camera;
 
 pub use self::crypto::{CryptoError, CryptoOperation, CryptoOutput, CryptoResult, HashAlgorithm, KeyAlgorithm};
 pub use self::http::{HttpError, HttpOperation, HttpOutput, HttpResult};
@@ -29,8 +29,6 @@ pub use self::camera::{CameraError, CameraFacing, CameraOperation, CameraOutput,
 pub use crux_core::render::Render;
 pub use crux_http::Http;
 pub use crux_kv::KeyValue;
-pub use crux_core::Effect;
-
 use crate::Event;
 
 pub type AppHttp = Http<Event>;
@@ -86,11 +84,12 @@ pub struct Capabilities {
     pub camera: camera::Camera<Event>,
 }
 
+/*
 #[cfg(any(test, feature = "test-utils"))]
 pub mod testing {
     use super::*;
 
-    pub fn mock_capabilities() -> Capabilities<Event> {
+    pub fn mock_capabilities() -> Capabilities {
         Capabilities {
             http: AppHttp::default(),
             kv: AppKv::default(),
@@ -106,8 +105,9 @@ pub mod testing {
 }
 
 #[cfg(test)]
-impl Default for Capabilities<Event> {
+impl Default for Capabilities {
     fn default() -> Self {
         testing::mock_capabilities()
     }
 }
+*/

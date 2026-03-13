@@ -25,15 +25,14 @@ impl<Ev> std::fmt::Debug for Telemetry<Ev> {
     }
 }
 
-impl<Ev> Capability<Ev> for Telemetry<Ev> {
+impl<Ev: 'static> Capability<Ev> for Telemetry<Ev> {
     type Operation = TelemetryOperation;
     type MappedSelf<MappedEv> = Telemetry<MappedEv>;
 
     fn map_event<F, NewEv>(&self, f: F) -> Self::MappedSelf<NewEv>
     where
         F: Fn(NewEv) -> Ev + Send + Sync + 'static,
-        Ev: 'static,
-        NewEv: 'static,
+        NewEv: 'static + Send,
     {
         Telemetry::new(self.context.map_event(f))
     }

@@ -2165,8 +2165,8 @@ pub enum Event {
         error: String,
     },
     RestoreStateRequested,
-        RestoreStateResponse {
-        result: Box<Result<Vec<u8>, crate::capabilities::KvError>>,
+    RestoreStateResponse {
+        result: Box<Result<Option<Vec<u8>>, crate::capabilities::KvError>>,
     },
     StateDecrypted {
         data: Vec<u8>,
@@ -2537,8 +2537,9 @@ pub struct ViewModel {
 
 pub mod app {
     use super::*;
+    use crux_core::Command;
     use crate::capabilities::{
-        CameraError, CameraOutput, Capabilities, CryptoOutput, HttpError, HttpOutput, KvError,
+        CameraError, CameraOutput, Capabilities, CryptoOutput, HttpError, HttpOutput, KvError, PushOutput,
     };
 
     #[derive(Default)]
@@ -2554,18 +2555,21 @@ pub mod app {
             let user_id = match &model.user_id {
                 Some(id) => id.clone(),
                 None => {
-                    ;
+
                     return;
                 }
             };
 
             let key_id = Self::derive_store_key_id(&user_id);
 
-            let serialized = match ciborium::to_vec(&model.offline_store) {
-                Ok(bytes) => bytes,
-                Err(e) => {
-                    ;
-                    return;
+            let serialized = {
+                let mut buf = Vec::new();
+                match ciborium::into_writer(&model.offline_store, &mut buf) {
+                    Ok(()) => buf,
+                    Err(e) => {
+
+                        return;
+                    }
                 }
             };
 
@@ -2825,7 +2829,7 @@ pub mod app {
         }
 
         fn process_camera_image(
-            data: Vec<u8>,
+            data: &[u8],
             model: &mut Model,
             caps: &Capabilities,
         ) -> Result<StagedPhoto, AppError> {
@@ -2844,22 +2848,10 @@ pub mod app {
                 AppError::new(ErrorKind::ImageFormatUnsupported, e.to_string())
             })?;
 
-            let reader = image::io::Reader::with_format(std::io::Cursor::new(&data), format);
-
-            let limits = image::io::Limits {
-                max_image_width: Some(MAX_IMAGE_DIMENSION),
-                max_image_height: Some(MAX_IMAGE_DIMENSION),
-                max_alloc: Some(MAX_IMAGE_ALLOC),
-            };
-
-            let img = reader
-                .with_limits(limits)
-                .decode()
+            let img = image::load_from_memory_with_format(&data, format)
                 .map_err(|e| AppError::new(ErrorKind::ImageProcessing, e.to_string()))?;
 
             let (width, height) = (img.width(), img.height());
-
-            ;
 
             let processed_img = if width > MAX_PROCESSED_DIMENSION || height > MAX_PROCESSED_DIMENSION {
                 img.resize(
@@ -2872,43 +2864,40 @@ pub mod app {
             };
 
             let mut processed_data = Vec::new();
-            processed_img
-                .write_to(
-                    &mut std::io::Cursor::new(&mut processed_data),
-                    image::ImageFormat::WebP,
-                )
-                .map_err(|e| AppError::new(ErrorKind::ImageProcessing, e.to_string()))?;
+            let _ = processed_img.write_to(
+                &mut std::io::Cursor::new(&mut processed_data),
+                image::ImageFormat::WebP,
+            );
 
             let (detections, cropped_data) = if let Some(detector) = &mut model.yolo_detector {
-                let raw_pixels: Vec<u8> = img.to_rgb8().into_raw();
-                let dets = detector.detect(&raw_pixels, width, height);
+                let dets = detector.detect(&data);
 
-                let cropped = if !dets.is_empty() {
-                    let merged = crate::image_processing::merge_bboxes(&dets);
-                    let padded = crate::image_processing::pad_bbox(merged, 0.15, width, height);
+                let cropped = if let Ok(det_result) = &dets {
+                    if !det_result.detections.is_empty() {
+                        let merged = crate::image_processing::merge_bboxes(&det_result.detections).map_err(|e| AppError::new(ErrorKind::ImageProcessing, e.to_string()))?;
+                        let padded = crate::image_processing::pad_bbox(merged, 0.15, width, height);
 
-                    let cropped_img = crate::image_processing::crop_image(&img, padded);
+                        let cropped_img = crate::image_processing::crop_image(&img, padded);
 
-                    let mut cropped_bytes = Vec::new();
-                    cropped_img
-                        .write_to(
+                        let mut cropped_bytes = Vec::new();
+                        let _ = cropped_img.write_to(
                             &mut std::io::Cursor::new(&mut cropped_bytes),
                             image::ImageFormat::WebP,
-                        )
-                        .ok();
-
-                    if cropped_bytes.is_empty() {
-                        None
-                    } else {
+                        );
                         Some(cropped_bytes)
+                    } else {
+                        None
                     }
                 } else {
                     None
                 };
 
-                (dets, cropped)
+                (
+                    dets.ok().map(|d| d.detections).unwrap_or_default(),
+                    cropped,
+                )
             } else {
-                (vec![], None)
+                (Vec::new(), None)
             };
 
             let detection_count = detections.len();
@@ -2917,10 +2906,10 @@ pub mod app {
                 .map(|d| d.confidence)
                 .fold(0.0f32, f32::max);
 
-            ;
+
 
             Ok(StagedPhoto {
-                original_data: data,
+                original_data: data.to_vec(),
                 processed_data,
                 cropped_data,
                 width,
@@ -2965,7 +2954,7 @@ pub mod app {
             let body = match serde_json::to_vec(&request) {
                 Ok(b) => b,
                 Err(e) => {
-                    ;
+
                     return;
                 }
             };
@@ -2985,9 +2974,24 @@ pub mod app {
                 builder = builder.header("Authorization", &format!("Bearer {token}"));
             }
 
-            builder.send(move |result| Event::CreateCaseResponse {
-                op_id,
-                result: Box::new(result),
+            builder.send(move |result| {
+                let mapped = match result {
+                    Ok(mut response) => Ok(crate::capabilities::http::HttpResponse::new(
+                        response.status().into(),
+                        crate::capabilities::http::HttpHeaders::default(),
+                        response.take_body().unwrap_or_default(),
+                        String::new(),
+                        0,
+                    )),
+                    Err(e) => Err(crate::capabilities::http::HttpError::InvalidResponse {
+                        reason: e.to_string(),
+                        request_id: String::new(),
+                    }),
+                };
+                Event::CreateCaseResponse {
+                    op_id,
+                    result: Box::new(mapped),
+                }
             });
         }
 
@@ -3006,12 +3010,27 @@ pub mod app {
                 .body(photo_data.to_vec());
 
             for (key, value) in upload_headers {
-                builder = builder.header(key, value);
+                builder = builder.header(key.as_str(), value.as_str());
             }
 
-            builder.send(move |result| Event::PhotoUploadResponse {
-                local_id: local_id_str,
-                result: Box::new(result),
+            builder.send(move |result| {
+                let mapped = match result {
+                    Ok(mut response) => Ok(crate::capabilities::http::HttpResponse::new(
+                        response.status().into(),
+                        crate::capabilities::http::HttpHeaders::default(),
+                        response.take_body().unwrap_or_default(),
+                        String::new(),
+                        0,
+                    )),
+                    Err(e) => Err(crate::capabilities::http::HttpError::InvalidResponse {
+                        reason: e.to_string(),
+                        request_id: String::new(),
+                    }),
+                };
+                Event::PhotoUploadResponse {
+                    local_id: local_id_str,
+                    result: Box::new(mapped),
+                }
             });
         }
 
@@ -3036,10 +3055,25 @@ pub mod app {
                 builder = builder.header("Authorization", &format!("Bearer {token}"));
             }
 
-            builder.send(move |result| Event::ClaimResponse {
-                case_id: case_id_str,
-                mutation_id,
-                result: Box::new(result),
+            builder.send(move |result| {
+                let mapped = match result {
+                    Ok(mut response) => Ok(crate::capabilities::http::HttpResponse::new(
+                        response.status().into(),
+                        crate::capabilities::http::HttpHeaders::default(),
+                        response.take_body().unwrap_or_default(),
+                        String::new(),
+                        0,
+                    )),
+                    Err(e) => Err(crate::capabilities::http::HttpError::InvalidResponse {
+                        reason: e.to_string(),
+                        request_id: String::new(),
+                    }),
+                };
+                Event::ClaimResponse {
+                    case_id: case_id_str,
+                    mutation_id,
+                    result: Box::new(mapped),
+                }
             });
         }
 
@@ -3062,7 +3096,7 @@ pub mod app {
             let body = match serde_json::to_vec(&request) {
                 Ok(b) => b,
                 Err(e) => {
-                    ;
+
                     return;
                 }
             };
@@ -3081,10 +3115,25 @@ pub mod app {
                 builder = builder.header("Authorization", &format!("Bearer {token}"));
             }
 
-            builder.send(move |result| Event::TransitionResponse {
-                case_id: case_id_str,
-                mutation_id: mutation_id_str,
-                result: Box::new(result),
+            builder.send(move |result| {
+                let mapped = match result {
+                    Ok(mut response) => Ok(crate::capabilities::http::HttpResponse::new(
+                        response.status().into(),
+                        crate::capabilities::http::HttpHeaders::default(),
+                        response.take_body().unwrap_or_default(),
+                        String::new(),
+                        0,
+                    )),
+                    Err(e) => Err(crate::capabilities::http::HttpError::InvalidResponse {
+                        reason: e.to_string(),
+                        request_id: String::new(),
+                    }),
+                };
+                Event::TransitionResponse {
+                    case_id: case_id_str,
+                    mutation_id: mutation_id_str,
+                    result: Box::new(mapped),
+                }
             });
         }
 
@@ -3113,9 +3162,39 @@ pub mod app {
             }
 
             if cursor.is_some() {
-                builder.send(|result| Event::LoadMoreResponse(Box::new(result)));
+                builder.send(|result| {
+                    let mapped = match result {
+                        Ok(mut response) => Ok(crate::capabilities::http::HttpResponse::new(
+                            response.status().into(),
+                            crate::capabilities::http::HttpHeaders::default(),
+                            response.take_body().unwrap_or_default(),
+                            String::new(),
+                            0,
+                        )),
+                        Err(e) => Err(crate::capabilities::http::HttpError::InvalidResponse {
+                            reason: e.to_string(),
+                            request_id: String::new(),
+                        }),
+                    };
+                    Event::LoadMoreResponse(Box::new(mapped))
+                });
             } else {
-                builder.send(|result| Event::RefreshResponse(Box::new(result)));
+                builder.send(|result| {
+                    let mapped = match result {
+                        Ok(mut response) => Ok(crate::capabilities::http::HttpResponse::new(
+                            response.status().into(),
+                            crate::capabilities::http::HttpHeaders::default(),
+                            response.take_body().unwrap_or_default(),
+                            String::new(),
+                            0,
+                        )),
+                        Err(e) => Err(crate::capabilities::http::HttpError::InvalidResponse {
+                            reason: e.to_string(),
+                            request_id: String::new(),
+                        }),
+                    };
+                    Event::RefreshResponse(Box::new(mapped))
+                });
             }
         }
 
@@ -3135,22 +3214,39 @@ pub mod app {
                 builder = builder.header("Authorization", &format!("Bearer {jwt}"));
             }
 
-            builder.send(|result| Event::FcmSyncResponse {
-                result: Box::new(result),
+            builder.send(|result| {
+                let mapped = match result {
+                    Ok(mut response) => Ok(crate::capabilities::http::HttpResponse::new(
+                        response.status().into(),
+                        crate::capabilities::http::HttpHeaders::default(),
+                        response.take_body().unwrap_or_default(),
+                        String::new(),
+                        0,
+                    )),
+                    Err(e) => Err(crate::capabilities::http::HttpError::InvalidResponse {
+                        reason: e.to_string(),
+                        request_id: String::new(),
+                    }),
+                };
+                Event::FcmSyncResponse {
+                    result: Box::new(mapped),
+                }
             });
         }
 
         fn handle_http_error(error: &HttpError) -> AppError {
             match error {
-                HttpError::Network(msg) => {
-                    AppError::new(ErrorKind::Network, "Network error").with_internal(msg)
+                HttpError::ConnectionError { message, .. }
+                | HttpError::TlsError { message, .. }
+                | HttpError::DnsError { message, .. } => {
+                    AppError::new(ErrorKind::Network, "Network error").with_internal(message)
                 }
                 HttpError::Timeout { .. } => AppError::new(ErrorKind::Timeout, "Request timed out"),
-                HttpError::HttpStatus { status: code, message: format!("HTTP {}", code), request_id: String::new(), retryable: code >= 500 } => {
-                    AppError::from_http_status(*code, body.as_deref())
+                HttpError::HttpStatus { status, message, .. } => {
+                    AppError::from_http_status(*status, Some(message.as_bytes()))
                 }
-                HttpError::Other(msg) => {
-                    AppError::new(ErrorKind::Unknown, "Request failed").with_internal(msg)
+                _ => {
+                    AppError::new(ErrorKind::Unknown, "Request failed").with_internal(error.to_string())
                 }
             }
         }
@@ -3681,9 +3777,15 @@ pub mod app {
 
                 Event::CameraPermissionRequested => {
                     model.camera_permission_state = PermissionState::Requesting;
-                    caps.camera.request_permission(|granted| {
+                    caps.camera.request_permission(|result| {
+                        let granted = match result {
+                            Ok(crate::capabilities::camera::CameraOutput::PermissionStatus(status)) => {
+                                status.is_granted()
+                            }
+                            _ => false,
+                        };
                         Event::CameraPermissionResult { granted }
-                    });
+                    })
                 }
 
                 Event::CameraPermissionResult { granted } => {
@@ -3694,34 +3796,32 @@ pub mod app {
                     };
 
                     if granted {
-                        self.update(Event::CapturePhotoRequested, model, caps);
+                        let _ = self.update(Event::CapturePhotoRequested, model, caps);
                     } else {
                         model.set_error(AppError::new(
                             ErrorKind::CameraPermissionDenied,
                             "Camera permission required",
                         ));
                     }
-
-                    caps.render.render();
+                    caps.render.render()
                 }
 
                 Event::CapturePhotoRequested => {
                     if !model.camera_permission_state.is_granted() {
                         model.camera_permission_state = PermissionState::Requesting;
-                        return;
+                        return Command::done();
                     }
 
-                    model.state = AppState::CameraCapture;
-                    caps.camera.capture(|result| Event::CameraResult(Box::new(result)));
-                    caps.render.render();
+                    caps.camera.capture_photo(crate::capabilities::camera::CaptureConfig::default(), |result| Event::CameraResult(Box::new(result)));
+                    caps.render.render()
                 }
 
                 Event::CameraResult(result) => {
                     model.state = AppState::Ready;
 
                     match *result {
-                        Ok(CameraOutput::Photo(img)) => {
-                            match Self::process_camera_image(data, model, caps) {
+                        Ok(crate::capabilities::camera::CameraOutput::Photo(img)) => {
+                            match Self::process_camera_image(img.data(), model, caps) {
                                 Ok(staged) => {
                                     model.staged_photo = Some(staged);
                                 }
@@ -3730,34 +3830,33 @@ pub mod app {
                                 }
                             }
                         }
-                        Ok(CameraOutput::Cancelled) => {
+                        Ok(crate::capabilities::camera::CameraOutput::Cancelled) => {
                             ;
                         }
+                        Ok(_) => {}
                         Err(e) => {
                             let error = match e {
-                                CameraError::PermissionDenied => AppError::new(
+                                crate::capabilities::camera::CameraError::PermissionDenied | crate::capabilities::camera::CameraError::PermissionDeniedPermanently => AppError::new(
                                     ErrorKind::CameraPermissionDenied,
                                     "Camera permission denied",
                                 ),
-                                CameraError::Unavailable => AppError::new(
+                                crate::capabilities::camera::CameraError::Unavailable { reason } => AppError::new(
                                     ErrorKind::FeatureUnavailable,
-                                    "Camera unavailable",
+                                    format!("Camera unavailable: {}", reason),
                                 ),
-                                CameraError::Failed(msg) => {
-                                    AppError::new(ErrorKind::Camera, msg)
+                                _ => {
+                                    AppError::new(ErrorKind::Camera, e.to_string())
                                 }
                             };
                             model.set_error(error);
-                            ;
                         }
-                    }
+                    };
 
-                    caps.render.render();
+                    caps.render.render()
                 }
-
                 Event::ClearStagedPhoto => {
                     model.staged_photo = None;
-                    caps.render.render();
+                    caps.render.render()
                 }
 
                 Event::PhotoProcessed { staged_photo } => {
@@ -3776,7 +3875,7 @@ pub mod app {
                         Err(e) => {
                             model.set_error(e);
                             caps.render.render();
-                            return;
+                            return Command::done();
                         }
                     };
 
@@ -3796,7 +3895,7 @@ pub mod app {
                     if let Err(e) = model.offline_store.push_local_case(local_case) {
                         model.set_error(e.into());
                         caps.render.render();
-                        return;
+                        return Command::done();
                     }
 
                     let intent = OutboxIntent::CreateCase {
@@ -3814,7 +3913,7 @@ pub mod app {
                     if let Err(e) = model.offline_store.push_outbox(entry) {
                         model.set_error(e.into());
                         caps.render.render();
-                        return;
+                        return Command::done();
                     }
 
                     model.staged_photo = None;
@@ -3845,8 +3944,8 @@ pub mod app {
                 }
 
                 Event::WriteEncryptedStore { key_id, data } => {
-                    caps.kv.set(&key_id, data, |result| match result {
-                        Ok(()) => Event::PersistenceSucceeded,
+                    caps.kv.set(key_id, data, |result| match result {
+                        Ok(_) => Event::PersistenceSucceeded,
                         Err(e) => Event::PersistenceFailed {
                             error: format!("{e:?}"),
                         },
@@ -3865,15 +3964,16 @@ pub mod app {
                 Event::RestoreStateRequested => {
                     if let Some(user_id) = &model.user_id {
                         let key_id = Self::derive_store_key_id(user_id);
-                        caps.kv.get(&key_id, |result| Event::RestoreStateResponse {
-                            result: Box::new(result),
+                        caps.kv.get(key_id.clone(), |result| Event::RestoreStateResponse {
+                            result: Box::new(result.map_err(|_| crate::capabilities::KvError::NotFound { key: key_id })),
                         });
                     }
+                    caps.render.render()
                 }
 
                 Event::RestoreStateResponse { result } => {
                     match *result {
-                        Ok(data) => {
+                        Ok(Some(data)) => {
                             if let Some(user_id) = &model.user_id {
                                 let key_id = Self::derive_store_key_id(user_id);
                                 caps.crypto.decrypt(key_id, data, |result| match result {
@@ -3886,7 +3986,7 @@ pub mod app {
                                 });
                             }
                         }
-                        Err(KvError::NotFound) => {
+                        Ok(None) | Err(KvError::NotFound { .. }) => {
                             ;
                         }
                         Err(e) => {
@@ -3896,7 +3996,7 @@ pub mod app {
                 }
 
                 Event::StateDecrypted { data } => {
-                    match ciborium::from_slice::<OfflineStore>(&data) {
+                    match ciborium::from_reader::<OfflineStore, _>(data.as_slice()) {
                         Ok(store) => {
                             model.offline_store = store;
                             ;
@@ -3914,7 +4014,7 @@ pub mod app {
 
                 Event::OutboxFlushRequested => {
                     if !model.network_online {
-                        return;
+                        return Command::done();
                     }
 
                     let now_ms = get_current_time_ms();
@@ -4047,17 +4147,17 @@ pub mod app {
                         Some(c) => c,
                         None => {
                             ;
-                            return;
+                            return Command::done();
                         }
                     };
 
                     if !case.status.clone().is_claimable() {
                         model.show_toast("Case cannot be claimed", ToastKind::Warning);
-                        return;
+                        return Command::done();
                     }
 
                     if model.pending_claims.contains_key(&case_id_typed) {
-                        return;
+                        return Command::done();
                     }
 
                     let pending = PendingClaim::new(
@@ -4111,7 +4211,7 @@ pub mod app {
                                 format!("Invalid status: {next_status}"),
                             ));
                             caps.render.render();
-                            return;
+                            return Command::done();
                         }
                     };
 
@@ -4119,14 +4219,14 @@ pub mod app {
                         Some(c) => c,
                         None => {
                             ;
-                            return;
+                            return Command::done();
                         }
                     };
 
                     if let Err(e) = case.status.validate_transition(next) {
                         model.set_error(e.into());
                         caps.render.render();
-                        return;
+                        return Command::done();
                     }
 
                     let mutation_id = model.store_optimistic_mutation(
@@ -4167,11 +4267,11 @@ pub mod app {
                     if !model.network_online {
                         model.show_toast("No internet connection", ToastKind::Warning);
                                                 caps.render.render();
-                        return;
+                        return Command::done();
                     }
 
                     if model.is_refreshing {
-                        return;
+                        return Command::done();
                     }
 
                     model.is_refreshing = true;
@@ -4188,7 +4288,7 @@ pub mod app {
 
                 Event::LoadMoreCases => {
                     if !model.network_online || model.is_refreshing {
-                        return;
+                        return Command::done();
                     }
 
                     if let Some(cursor) = &model.cases_cursor.clone() {
@@ -4216,8 +4316,9 @@ pub mod app {
 
                     if granted {
                         caps.push.get_token(|result| match result {
-                            Ok(token) => Event::PushTokenReceived { token },
-                            Err(e) => Event::PushTokenFailed { error: e },
+                            Ok(PushOutput::Token(token)) => Event::PushTokenReceived { token },
+                            Ok(_) => Event::PushTokenFailed { error: "Unexpected output".into() },
+                            Err(e) => Event::PushTokenFailed { error: format!("{:?}", e) },
                         });
                     }
 

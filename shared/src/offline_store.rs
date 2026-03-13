@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 use thiserror::Error;
 
 use crate::crypto::{CryptoError, CryptoProvider};
-use crate::model::LocalCase;
+use crate::LocalCase;
 use crate::outbox::{OutboxEntry, OutboxError};
 
 const CURRENT_SCHEMA_VERSION: u32 = 1;

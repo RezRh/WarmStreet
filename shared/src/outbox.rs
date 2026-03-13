@@ -2681,7 +2681,7 @@ mod tests {
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use std::sync::atomic::AtomicUsize;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use tokio::time::{sleep, Duration};
 
     /// Simulated processor for integration testing

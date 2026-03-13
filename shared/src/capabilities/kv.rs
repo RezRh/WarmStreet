@@ -147,7 +147,7 @@ impl KeyNamespace {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct KvValue {
     data: Vec<u8>,
     version: u64,
@@ -412,6 +412,23 @@ impl StorageErrorCode {
                 | StorageErrorCode::Busy
                 | StorageErrorCode::Locked
         )
+    }
+}
+
+impl core::fmt::Display for StorageErrorCode {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let msg = match self {
+            Self::Unknown => "unknown",
+            Self::ConnectionFailed => "connection_failed",
+            Self::ConnectionLost => "connection_lost",
+            Self::Corrupted => "corrupted",
+            Self::DiskFull => "disk_full",
+            Self::PermissionDenied => "permission_denied",
+            Self::Busy => "busy",
+            Self::Locked => "locked",
+            Self::IoError => "io_error",
+        };
+        write!(f, "{}", msg)
     }
 }
 
