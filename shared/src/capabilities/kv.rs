@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::marker::PhantomData;
 use thiserror::Error;
 
-use crate::event::Event;
+use crate::Event;
 
 pub type KvCapability = KeyValue<Event>;
 

@@ -6,7 +6,7 @@ use url::Url;
 
 use crux_http::Http;
 
-use crate::event::Event;
+use crate::Event;
 
 pub type HttpCapability = Http<Event>;
 

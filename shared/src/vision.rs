@@ -1,11 +1,14 @@
 use ndarray::{Array, Array2, Array3, ArrayView1, Axis};
 use ort::session::Session;
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 use tracing::{debug, instrument, warn};
+
+
+// Re-export types from model.rs
+pub use crate::model::{Detection, DetectionResult, NormalizedBbox};
 
 // ============================================================================
 // Constants with explicit documentation
@@ -18,7 +21,6 @@ const MAX_COMPRESSED_SIZE: usize = 20 * 1024 * 1024;
 const MAX_PIXELS: u64 = 100_000_000;
 
 /// Model input dimensions - validated against actual model at runtime
-const DEFAULT_INPUT_SIZE: u32 = 640;
 
 /// Maximum detections from model output to prevent DoS
 const MAX_MODEL_DETECTIONS: usize = 50_000;
@@ -60,10 +62,10 @@ pub enum VisionError {
     #[error("unsupported image format: {0:?}")]
     UnsupportedFormat(String),
 
-    #[error("invalid image dimensions: {width}x{height}")]
+    #[error("invalid dimensions: {width}x{height}")]
     InvalidDimensions { width: u32, height: u32 },
 
-    #[error("inference engine error")]
+    #[error("inference engine error: {0}")]
     InferenceEngine(String), // Sanitized - no raw ORT errors
 
     #[error("invalid model output shape")]
@@ -92,39 +94,9 @@ impl From<ort::Error> for VisionError {
 // Detection Result
 // ============================================================================
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[must_use]
-pub struct Detection {
-    /// Bounding box [x1, y1, x2, y2] normalized to original image (0.0..1.0)
-    pub bbox: [f32; 4],
-    /// Detection confidence score (0.0..1.0)
-    pub confidence: f32,
-    /// Class ID from model
-    pub class_id: u32,
-}
-
-/// Metadata about the detection run
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[must_use]
-pub struct DetectionResult {
-    pub detections: Vec<Detection>,
-    /// True if results were truncated due to limits
-    pub truncated: bool,
-    /// Number of candidates before NMS
-    pub candidates_before_nms: usize,
-    /// Preprocessing duration
-    pub preprocess_ms: f64,
-    /// Inference duration
-    pub inference_ms: f64,
-    /// Postprocessing duration
-    pub postprocess_ms: f64,
-}
-
-// ============================================================================
-// Model Configuration (extracted at load time)
-// ============================================================================
-
 #[derive(Debug, Clone)]
+/// Model Configuration (extracted at load time)
+// ============================================================================
 struct ModelConfig {
     input_height: u32,
     input_width: u32,
@@ -180,14 +152,16 @@ impl YoloDetector {
     /// Extracts configuration from model metadata and validates expectations.
     fn extract_model_config(session: &Session) -> Result<ModelConfig, VisionError> {
         // Validate input shape
-        let input = session.inputs.first().ok_or_else(|| {
+        let input = session.inputs().first().ok_or_else(|| {
             VisionError::ModelMismatch("Model has no inputs".into())
         })?;
 
         let input_dims: Vec<i64> = input
-            .input_type
-            .tensor_dimensions()
+            .dtype()
+            .tensor_shape()
             .ok_or_else(|| VisionError::ModelMismatch("Input is not a tensor".into()))?
+            .iter()
+            .copied()
             .collect();
 
         // Expected: [batch, channels, height, width] = [1, 3, 640, 640]
@@ -208,14 +182,16 @@ impl YoloDetector {
         }
 
         // Validate output shape to extract class count
-        let output = session.outputs.first().ok_or_else(|| {
+        let output = session.outputs().first().ok_or_else(|| {
             VisionError::ModelMismatch("Model has no outputs".into())
         })?;
 
         let output_dims: Vec<i64> = output
-            .output_type
-            .tensor_dimensions()
+            .dtype()
+            .tensor_shape()
             .ok_or_else(|| VisionError::ModelMismatch("Output is not a tensor".into()))?
+            .iter()
+            .copied()
             .collect();
 
         // Expected: [1, 84, 8400] or [1, 8400, 84]
@@ -273,9 +249,9 @@ impl YoloDetector {
 
     /// Validates image dimensions before full decode (prevents decompression bombs).
     fn validate_dimensions(image_data: &[u8]) -> Result<(u32, u32), VisionError> {
-        let reader = image::io::Reader::new(Cursor::new(image_data))
+        let reader = image::ImageReader::new(Cursor::new(image_data))
             .with_guessed_format()
-            .map_err(VisionError::Decode)?;
+            .map_err(|e| VisionError::Decode(e.into()))?;
 
         let (width, height) = reader.into_dimensions().map_err(VisionError::Decode)?;
 
@@ -447,7 +423,7 @@ impl YoloDetector {
         let input_value = ort::value::Value::from_array(input_tensor)?;
 
         // Acquire lock for thread-safe inference
-        let session = self.session.lock().map_err(|_| {
+        let mut session = self.session.lock().map_err(|_| {
             VisionError::Processing("Session lock poisoned".into())
         })?;
 
@@ -651,6 +627,12 @@ impl YoloDetector {
 // Helper Types
 // ============================================================================
 
+pub fn load_bundled_model() -> Option<&'static [u8]> {
+    // Return None since we don't bundle the ONNX file by default to save size.
+    // Clients must provide the model bytes.
+    None
+}
+
 #[derive(Debug, Clone, Copy)]
 struct PreprocessParams {
     scale: f32,
@@ -740,7 +722,7 @@ fn nms_with_tracking(mut detections: Vec<Detection>, iou_threshold: f32) -> (Vec
     }
 
     // Collect results without cloning (swap-remove pattern)
-    let mut result = Vec::with_capacity(keep_indices.len());
+    
     
     // Sort indices in reverse order so we can swap_remove without invalidating indices
     let mut sorted_indices = keep_indices;
@@ -763,7 +745,7 @@ fn nms_with_tracking(mut detections: Vec<Detection>, iou_threshold: f32) -> (Vec
     
     // Sort back to original order (by index ascending = confidence descending)
     indexed.sort_unstable_by_key(|(i, _)| *i);
-    result = indexed.into_iter().map(|(_, d)| d).collect();
+    let result: Vec<Detection> = indexed.into_iter().map(|(_, d)| d).collect();
 
     (result, truncated)
 }

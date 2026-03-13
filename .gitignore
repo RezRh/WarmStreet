@@ -2,7 +2,7 @@
 .DS_Store
 Thumbs.db
 
-# Node.js (API & Worker)
+# Node.js (Frontend & Worker)
 node_modules/
 dist/
 build/
@@ -15,24 +15,12 @@ yarn-debug.log*
 yarn-error.log*
 *.tsbuildinfo
 
-# iOS
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
-!*.xcodeproj/project.xcworkspace/
-Pods/
-DerivedData/
-*.xcworkspace/*
-!*.xcworkspace/contents.xcworkspacedata
-
-# Android
-.gradle/
-build/
-*.iml
-.idea/
-local.properties
-.cxx/
-captures/
+# Tauri
+src-tauri/target/
+src-tauri/Cargo.lock
+src-tauri/gen/
+src-tauri/icons/
+src-tauri/**/*.d
 
 # Rust (shared)
 target/

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -7,6 +7,7 @@ use thiserror::Error;
 use tokio::sync::{RwLock, Semaphore};
 use tracing::{error, info, instrument, warn};
 use uuid::Uuid;
+use rand::SeedableRng;
 
 /// Validated operation identifier - immutable after construction
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -514,8 +515,12 @@ impl EntryState {
         )
     }
 
+    pub fn is_completed(&self) -> bool {
+        matches!(self, EntryState::Completed { .. })
+    }
+
     /// Validate if transition to InFlight is allowed
-    pub fn can_transition_to_in_flight(&self, now: UnixTimeMs, timeout_ms: u64) -> bool {
+    pub fn can_transition_to_in_flight(&self, now: UnixTimeMs, _timeout_mss: u64) -> bool {
         match self {
             EntryState::Pending => true,
             EntryState::Retrying { next_attempt_at, .. } => now.0 >= next_attempt_at.0,
@@ -1376,8 +1381,8 @@ impl<S: OutboxStorage> Outbox<S> {
 
         // Update completed cache
         state.completed_idem_keys.put(
-            entry.idempotency_key.as_str().to_string(),
-            (now, entry.expires_at),
+            updated.idempotency_key.as_str().to_string(),
+            (now, updated.expires_at),
         );
 
         // Persist with CAS
@@ -1675,6 +1680,22 @@ impl<S: OutboxStorage> Outbox<S> {
     pub async fn sync(&self) -> Result<(), OutboxError> {
         self.storage.sync().await
     }
+}
+
+#[allow(dead_code)]
+pub fn push_entry(outbox: &mut VecDeque<OutboxEntry>, entry: OutboxEntry) -> Result<(), OutboxError> {
+    if outbox.iter().any(|e| e.op_id == entry.op_id) {
+        return Err(OutboxError::DuplicateOpId(entry.op_id.as_str().to_string()));
+    }
+    if outbox.iter().any(|e| {
+        e.idempotency_key == entry.idempotency_key && !e.state.is_completed()
+    }) {
+        return Err(OutboxError::DuplicateIdempotencyKey(
+            entry.idempotency_key.as_str().to_string(),
+        ));
+    }
+    outbox.push_back(entry);
+    Ok(())
 }
 
 // ============================================================================

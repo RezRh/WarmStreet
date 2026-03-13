@@ -99,13 +99,13 @@ struct StoreEnvelope {
     payload: Vec<u8>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct StorePayload {
     outbox: VecDeque<OutboxEntry>,
     pending_local_cases: Vec<LocalCase>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OfflineStore {
     schema_version: u32,
     outbox: VecDeque<OutboxEntry>,

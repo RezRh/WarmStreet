@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "WarmStreet",
+  "version": "1.0.0",
+  "identifier": "com.warmstreet.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "WarmStreet",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Zero-Latency Animal Rescue Coordination",
+    "longDescription": "WarmStreet connects citizens who spot injured street animals with verified volunteers and veterinarians — in under two seconds.",
+    "copyright": "AGPL-3.0",
+    "resources": []
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    },
+    "http": {
+      "enabled": true,
+      "scope": ["https://**", "http://localhost:**"]
+    },
+    "fs": {
+      "enabled": true
+    },
+    "dialog": {
+      "enabled": true
+    },
+    "notification": {
+      "enabled": true
+    },
+    "geolocation": {
+      "enabled": true
+    },
+    "camera": {
+      "enabled": true
+    }
+  }
+}

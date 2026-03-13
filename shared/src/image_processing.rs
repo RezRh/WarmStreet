@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use image::codecs::webp::WebPEncoder;
-use image::io::Reader as ImageReader;
+use image::ImageReader as ImageReader;
 use image::{DynamicImage, ExtendedColorType, GenericImageView, ImageEncoder, Limits};
 use metrics::{counter, histogram};
 use thiserror::Error;
@@ -340,6 +340,37 @@ pub fn merge_bboxes(detections: &[Detection]) -> Result<NormalizedBbox, ImagePro
     }
 
     NormalizedBbox::new(x1 as f32, y1 as f32, x2 as f32, y2 as f32)
+        .map_err(|_e| ImageProcessingError::InvalidBbox {
+            x1: x1 as f32,
+            y1: y1 as f32,
+            x2: x2 as f32,
+            y2: y2 as f32,
+            reason: "failed to create merged bbox",
+        })
+}
+
+pub fn pad_bbox(bbox: NormalizedBbox, padding: f32, _width: u32, _height: u32) -> NormalizedBbox {
+    let w = bbox.width();
+    let h = bbox.height();
+    let x_pad = w * padding;
+    let y_pad = h * padding;
+
+    NormalizedBbox::new(
+        (bbox.x1() - x_pad).max(0.0),
+        (bbox.y1() - y_pad).max(0.0),
+        (bbox.x2() + x_pad).min(1.0),
+        (bbox.y2() + y_pad).min(1.0),
+    ).unwrap_or(bbox)
+}
+
+pub fn crop_image(img: &DynamicImage, bbox: NormalizedBbox) -> DynamicImage {
+    let (width, height) = img.dimensions();
+    let x = (bbox.x1() * width as f32) as u32;
+    let y = (bbox.y1() * height as f32) as u32;
+    let w = (bbox.width() * width as f32) as u32;
+    let h = (bbox.height() * height as f32) as u32;
+
+    img.crop_imm(x, y, (w).min(width - x), (h).min(height - y))
 }
 
 fn validate_expand(expand: f32, max: f32) -> Result<(), ImageProcessingError> {
@@ -406,7 +437,7 @@ fn decode_image(
     Ok(img)
 }
 
-fn encode_webp(img: &DynamicImage, quality: u8) -> Result<Vec<u8>, ImageProcessingError> {
+fn encode_webp(img: &DynamicImage, _quality: u8) -> Result<Vec<u8>, ImageProcessingError> {
     let rgba = img.to_rgba8();
     let (width, height) = rgba.dimensions();
 

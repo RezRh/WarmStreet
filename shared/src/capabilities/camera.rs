@@ -2,13 +2,12 @@ use crux_core::capability::{Capability, CapabilityContext, Operation};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::event::Event;
 
 pub const MAX_IMAGE_SIZE_BYTES: usize = 20 * 1024 * 1024;
 pub const DEFAULT_JPEG_QUALITY: u8 = 85;
 pub const DEFAULT_MAX_DIMENSION: u32 = 2048;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Camera<E> {
     context: CapabilityContext<CameraOperation, E>,
 }
@@ -39,24 +38,33 @@ where
     where
         F: FnOnce(CameraResult) -> E + Send + 'static,
     {
-        self.context
-            .request_from_shell(CameraOperation::CheckPermission, callback);
+        let ctx = self.context.clone();
+        self.context.spawn(async move {
+            let result = ctx.request_from_shell(CameraOperation::CheckPermission).await;
+            ctx.update_app(callback(result));
+        });
     }
 
     pub fn request_permission<F>(&self, callback: F)
     where
         F: FnOnce(CameraResult) -> E + Send + 'static,
     {
-        self.context
-            .request_from_shell(CameraOperation::RequestPermission, callback);
+        let ctx = self.context.clone();
+        self.context.spawn(async move {
+            let result = ctx.request_from_shell(CameraOperation::RequestPermission).await;
+            ctx.update_app(callback(result));
+        });
     }
 
     pub fn get_capabilities<F>(&self, callback: F)
     where
         F: FnOnce(CameraResult) -> E + Send + 'static,
     {
-        self.context
-            .request_from_shell(CameraOperation::GetCapabilities, callback);
+        let ctx = self.context.clone();
+        self.context.spawn(async move {
+            let result = ctx.request_from_shell(CameraOperation::GetCapabilities).await;
+            ctx.update_app(callback(result));
+        });
     }
 
     pub fn capture_photo<F>(&self, config: CaptureConfig, callback: F)
@@ -64,8 +72,11 @@ where
         F: FnOnce(CameraResult) -> E + Send + 'static,
     {
         let config = config.validated();
-        self.context
-            .request_from_shell(CameraOperation::CapturePhoto { config }, callback);
+        let ctx = self.context.clone();
+        self.context.spawn(async move {
+            let result = ctx.request_from_shell(CameraOperation::CapturePhoto { config }).await;
+            ctx.update_app(callback(result));
+        });
     }
 
     pub fn capture_photo_simple<F>(&self, facing: CameraFacing, callback: F)
@@ -80,15 +91,16 @@ where
         F: FnOnce(CameraResult) -> E + Send + 'static,
     {
         let config = config.validated();
-        self.context
-            .request_from_shell(CameraOperation::PickFromGallery { config }, callback);
+        let ctx = self.context.clone();
+        self.context.spawn(async move {
+            let result = ctx.request_from_shell(CameraOperation::PickFromGallery { config }).await;
+            ctx.update_app(callback(result));
+        });
     }
 
     pub fn cancel_pending(&self) {
         self.context
-            .request_from_shell(CameraOperation::CancelPending, |_: CameraResult| {
-                panic!("cancel should not produce event")
-            });
+            .request_from_shell(CameraOperation::CancelPending);
     }
 }
 
@@ -102,7 +114,6 @@ where
     }
 }
 
-pub type CameraCapability = Camera<Event>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum CameraOperation {

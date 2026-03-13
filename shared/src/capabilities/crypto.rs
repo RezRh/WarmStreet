@@ -1,10 +1,9 @@
+use crux_core::capability::{Capability, CapabilityContext, Operation};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use crux_core::capability::{CapabilityContext, Capability};
 
-use crate::event::Event;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Crypto<E> {
     context: CapabilityContext<CryptoOperation, E>,
 }
@@ -15,7 +14,7 @@ impl<Ev> Capability<Ev> for Crypto<Ev> {
 
     fn map_event<F, NewEv>(&self, f: F) -> Self::MappedSelf<NewEv>
     where
-        F: Fn(NewEv) -> Ev + Send + Sync + Copy + 'static,
+        F: Fn(NewEv) -> Ev + Send + Sync + 'static,
         Ev: 'static,
         NewEv: 'static,
     {
@@ -23,27 +22,34 @@ impl<Ev> Capability<Ev> for Crypto<Ev> {
     }
 }
 
-impl<E> Crypto<E> {
+impl<E: 'static> Crypto<E> {
     pub fn new(context: CapabilityContext<CryptoOperation, E>) -> Self {
         Self { context }
     }
 
     pub fn encrypt<F>(&self, key_id: String, plaintext: Vec<u8>, callback: F)
     where
-        F: Fn(CryptoResult) -> E + Send + Sync + 'static,
+        F: FnOnce(CryptoResult) -> E + Send + 'static,
     {
-        self.context.request_from_shell(CryptoOperation::Encrypt { key_id, plaintext }, callback);
+        let ctx = self.context.clone();
+        self.context.spawn(async move {
+            let result = ctx.request_from_shell(CryptoOperation::Encrypt { key_id, plaintext }).await;
+            ctx.update_app(callback(result));
+        });
     }
 
     pub fn decrypt<F>(&self, key_id: String, ciphertext: Vec<u8>, callback: F)
     where
-        F: Fn(CryptoResult) -> E + Send + Sync + 'static,
+        F: FnOnce(CryptoResult) -> E + Send + 'static,
     {
-        self.context.request_from_shell(CryptoOperation::Decrypt { key_id, ciphertext }, callback);
+        let ctx = self.context.clone();
+        self.context.spawn(async move {
+            let result = ctx.request_from_shell(CryptoOperation::Decrypt { key_id, ciphertext }).await;
+            ctx.update_app(callback(result));
+        });
     }
 }
 
-pub type CryptoCapability = Crypto<Event>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum CryptoOperation {
@@ -54,6 +60,10 @@ pub enum CryptoOperation {
     Decrypt { key_id: String, ciphertext: Vec<u8> },
     Hash { algorithm: HashAlgorithm, data: Vec<u8> },
     GenerateRandom { length: usize },
+}
+
+impl Operation for CryptoOperation {
+    type Output = CryptoResult;
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]

@@ -1,0 +1,1129 @@
+    Checking shared v0.1.0 (/Users/rezwanurrahmanlabib/WarmStreet/shared)
+error: expected `,`
+    --> src/lib.rs:3149:133
+     |
+3149 | ...   HttpError::HttpStatus { status: code, message: format!("HTTP {}", code), request_id: String::new(), retryable: code >= 50...
+     |       --------------------- while parsing the fields for this pattern                                                     ^^
+
+error: capabilities should be generic over a single event type
+  --> src/capabilities/mod.rs:72:10
+   |
+72 | ...ve(crux_core::macros::Effect)]
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: this error originates in the derive macro `crux_core::macros::Effect` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0425]: cannot find function `pad_bbox` in module `crate::image_processing`
+    --> src/lib.rs:2888:59
+     |
+2888 | ...g::pad_bbox(me...
+     |       ^^^^^^^^ not found in `crate::image_processing`
+
+error[E0425]: cannot find function `crop_image` in module `crate::image_processing`
+    --> src/lib.rs:2890:64
+     |
+2890 | ...g::crop_image(&i...
+     |       ^^^^^^^^^^ not found in `crate::image_processing`
+
+error[E0425]: cannot find value `code` in this scope
+    --> src/lib.rs:3150:49
+     |
+3150 | ...s(*code, body...
+     |       ^^^^ not found in this scope
+
+error[E0425]: cannot find value `body` in this scope
+    --> src/lib.rs:3150:55
+     |
+3150 | ...e, body.as_de...
+     |       ^^^^ not found in this scope
+
+error[E0425]: cannot find function `load_bundled_model` in module `crate::vision`
+    --> src/lib.rs:3465:63
+     |
+3465 | ...n::load_bundled_model() {
+     |       ^^^^^^^^^^^^^^^^^^ not found in `crate::vision`
+
+warning: unused import: `std::collections::HashMap`
+ --> src/capabilities/http.rs:2:5
+  |
+2 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: use of deprecated type alias `image::io::Reader`: this type has been moved and renamed to image::ImageReader
+    --> src/lib.rs:2847:37
+     |
+2847 | ...o::Reader::wi...
+     |       ^^^^^^
+     |
+     = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated type alias `image::io::Limits`: this type has been moved to image::Limits
+    --> src/lib.rs:2849:37
+     |
+2849 | ...o::Limits {
+     |       ^^^^^^
+
+error[E0276]: impl has stricter requirements than trait
+  --> src/capabilities/crypto.rs:18:44
+   |
+18 | ...nc + Copy + 'st...
+   |         ^^^^ impl has extra requirement `F: std::marker::Copy`
+
+error[E0276]: impl has stricter requirements than trait
+  --> src/capabilities/location.rs:18:44
+   |
+18 | ...nc + Copy + 'st...
+   |         ^^^^ impl has extra requirement `F: std::marker::Copy`
+
+error[E0276]: impl has stricter requirements than trait
+  --> src/capabilities/push.rs:18:44
+   |
+18 | ...nc + Copy + 'st...
+   |         ^^^^ impl has extra requirement `F: std::marker::Copy`
+
+error[E0782]: expected a type, found a trait
+    --> src/lib.rs:3447:23
+     |
+3447 | ... = crate::capabilities::Effect;
+     |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0499]: cannot borrow `state` as mutable more than once at a time
+    --> src/capabilities/outbox.rs:1378:9
+     |
+1358 | ...   let entry = state
+     |                   ----- first mutable borrow occurs here
+...
+1378 | ...   state.completed_idem_keys.put(
+     |       ^^^^^ second mutable borrow occurs here
+1379 | ...       entry.idempotency_key.as...
+     |           --------------------- first borrow later used here
+
+error[E0499]: cannot borrow `state` as mutable more than once at a time
+    --> src/outbox.rs:1378:9
+     |
+1358 | ...   let entry = state
+     |                   ----- first mutable borrow occurs here
+...
+1378 | ...   state.completed_idem_keys.put(
+     |       ^^^^^ second mutable borrow occurs here
+1379 | ...       entry.idempotency_key.as...
+     |           --------------------- first borrow later used here
+
+error[E0277]: `CapabilityContext<..., ...>` doesn't implement `std::fmt::Debug`
+ --> src/capabilities/crypto.rs:9:5
+  |
+7 | #[derive(Debug, Clone)]
+  |          ----- in this derive macro expansion
+8 | pub struct Crypto<E> {
+9 |     con...eration, E>,
+  |     ^^^...^^^^^^^^^^^ unsatisfied trait bound
+  |
+  = help: the trait `std::fmt::Debug` is not implemented for `CapabilityContext<..., ...>`
+  = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-4689160433480809928.txt'
+  = note: consider using `--verbose` to print the full type name to the console
+
+error[E0369]: binary operation `==` cannot be applied to type `&HttpRequest`
+   --> src/capabilities/http.rs:656:13
+    |
+654 | ...Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    |                                          --------- in this derive macro expansion
+655 | ...HttpOperation {
+656 | ...te(HttpRequest),
+    |       ^^^^^^^^^^^
+    |
+note: an implementation of `PartialEq` might be missing for `capabilities::http::HttpRequest`
+   --> src/capabilities/http.rs:467:1
+    |
+467 | pub struct HttpRequest {
+    | ^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-240238132171972512.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: consider annotating `capabilities::http::HttpRequest` with `#[derive(PartialEq)]`
+    |
+467 + #[derive(PartialEq)]
+468 | pub struct HttpRequest {
+    |
+
+error[E0277]: the trait bound `HttpRequest: Eq` is not satisfied
+   --> src/capabilities/http.rs:656:13
+    |
+654 | ...Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    |                                                     -- in this derive macro expansion
+655 | ...HttpOperation {
+656 | ...te(HttpRequest),
+    |       ^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `std::cmp::Eq` is not implemented for `HttpRequest`
+   --> src/capabilities/http.rs:467:1
+    |
+467 | pub struct HttpRequest {
+    | ^^^^^^^^^^^^^^^^^^^^^^
+note: required by a bound in `AssertParamIsEq`
+   --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/cmp.rs:371:31
+    |
+371 | ...q<T: Eq + Poin...
+    |         ^^ required by this bound in `AssertParamIsEq`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-16436579947200257760.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: the method `as_display` exists for reference `&StorageErrorCode`, but its trait bounds were not satisfied
+    --> src/capabilities/kv.rs:349:13
+     |
+ 349 |     #[error...{retryable})")]
+     |            ...^^^^^^^^^^^^^ method cannot be called on `&StorageErrorCode` due to unsatisfied trait bounds
+...
+ 394 | pub enum StorageErrorCode {
+     | ------------------------- doesn't satisfy `StorageErrorCode: std::fmt::Display`
+     |
+     = note: the following trait bounds were not satisfied:
+             `StorageErrorCode: std::fmt::Display`
+             which is required by `&StorageErrorCode: AsDisplay<'_>`
+note: the trait `std::fmt::Display` must be implemented
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1186:1
+     |
+1186 | pub trait Display: PointeeSized {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following traits define an item `as_display`, perhaps you need to implement one of them:
+             candidate #1: `AsDisplay`
+             candidate #2: `thiserror::display::AsDisplay`
+
+error[E0369]: binary operation `==` cannot be applied to type `&Option<...>`
+   --> src/capabilities/kv.rs:420:11
+    |
+418 | ...e(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    |                                            --------- in this derive macro expansion
+419 | ...m KvOutput {
+420 | ...ue(Option<KvValue>),
+    |       ^^^^^^^^^^^^^^^
+    |
+note: an implementation of `PartialEq` might be missing for `KvValue`
+   --> src/capabilities/kv.rs:151:1
+    |
+151 | pub struct KvValue {
+    | ^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-14125116731490073197.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: consider annotating `KvValue` with `#[derive(PartialEq)]`
+    |
+151 + #[derive(PartialEq)]
+152 | pub struct KvValue {
+    |
+
+error[E0369]: binary operation `==` cannot be applied to type `&Vec<...>`
+   --> src/capabilities/kv.rs:429:11
+    |
+418 | ...e(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    |                                            --------- in this derive macro expansion
+...
+429 | ...ti(Vec<Option<KvValue>>),
+    |       ^^^^^^^^^^^^^^^^^^^^
+    |
+note: an implementation of `PartialEq` might be missing for `KvValue`
+   --> src/capabilities/kv.rs:151:1
+    |
+151 | pub struct KvValue {
+    | ^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-11176529873574060203.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: consider annotating `KvValue` with `#[derive(PartialEq)]`
+    |
+151 + #[derive(PartialEq)]
+152 | pub struct KvValue {
+    |
+
+error[E0277]: the trait bound `KvValue: Eq` is not satisfied
+   --> src/capabilities/kv.rs:420:11
+    |
+418 | ...e(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    |                                                       -- in this derive macro expansion
+419 | ...m KvOutput {
+420 | ...ue(Option<KvValue>),
+    |       ^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `std::cmp::Eq` is not implemented for `KvValue`
+help: the trait `std::cmp::Eq` is implemented for `Option<T>`
+   --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:595:16
+    |
+595 | #[derive_const(Eq)]
+    |                ^^
+    = note: required for `Option<...>` to implement `std::cmp::Eq`
+note: required by a bound in `AssertParamIsEq`
+   --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/cmp.rs:371:31
+    |
+371 | ...q<T: Eq + Poin...
+    |         ^^ required by this bound in `AssertParamIsEq`
+    = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-12526451871006929335.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+help: consider annotating `KvValue` with `#[derive(Eq)]`
+    |
+151 + #[derive(Eq)]
+152 | pub struct KvValue {
+    |
+
+error[E0277]: `CapabilityContext<..., ...>` doesn't implement `std::fmt::Debug`
+ --> src/capabilities/location.rs:9:5
+  |
+7 | #[derive(Debug, Clone)]
+  |          ----- in this derive macro expansion
+8 | pub struct Location<E> {
+9 |     con...eration, E>,
+  |     ^^^...^^^^^^^^^^^ unsatisfied trait bound
+  |
+  = help: the trait `std::fmt::Debug` is not implemented for `CapabilityContext<..., ...>`
+  = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-5631309986375500091.txt'
+  = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+  --> src/capabilities/location.rs:52:37
+   |
+52 | ...pp(callback(result));
+   |       -------- ^^^^^^ expected `Result<(f64, f64, Option<f64>), String>`, found `Result<(f64, f64, Option<f64>), ...>`
+   |       |
+   |       arguments to this function are incorrect
+   |
+   = note: expected enum `Result<_, std::string::String>`
+              found enum `Result<_, LocationError>`
+note: callable defined here
+  --> src/capabilities/location.rs:47:12
+   |
+47 | ...F: FnOnce(...>) -> E + ...
+   |       ^^^^^^^...^^^^^^^
+
+error[E0599]: no function or associated item named `from_seed` found for struct `StdRng` in the current scope
+    --> src/capabilities/outbox.rs:1486:43
+     |
+1486 | ...g::from_seed(ra...
+     |       ^^^^^^^^^ function or associated item not found in `StdRng`
+     |
+     = help: items from traits can only be used if the trait is in scope
+help: trait `SeedableRng` which provides `from_seed` is implemented but not in scope; perhaps you want to import it
+     |
+   1 + use rand::SeedableRng;
+     |
+
+error[E0277]: `CapabilityContext<..., ...>` doesn't implement `std::fmt::Debug`
+ --> src/capabilities/push.rs:9:5
+  |
+7 | #[derive(Debug, Clone)]
+  |          ----- in this derive macro expansion
+8 | pub struct Push<E> {
+9 |     context: CapabilityContext<PushOperation, E>,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+  |
+  = help: the trait `std::fmt::Debug` is not implemented for `CapabilityContext<..., ...>`
+  = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-17531988203651082614.txt'
+  = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+  --> src/capabilities/push.rs:51:37
+   |
+51 | ...pp(callback(result));
+   |       -------- ^^^^^^ expected `Result<String, String>`, found `Result<PushOutput, PushError>`
+   |       |
+   |       arguments to this function are incorrect
+   |
+   = note: expected enum `Result<std::string::String, std::string::String>`
+              found enum `Result<PushOutput, PushError>`
+note: callable defined here
+  --> src/capabilities/push.rs:46:12
+   |
+46 | ...F: FnOnce(Result<String, String>) -> E + ...
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0277]: `CapabilityContext<..., ...>` doesn't implement `std::fmt::Debug`
+  --> src/capabilities/camera.rs:13:5
+   |
+11 | #[derive(Debug, Clone)]
+   |          ----- in this derive macro expansion
+12 | pub struct Camera<E> {
+13 |     co...peration, E>,
+   |     ^^...^^^^^^^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `std::fmt::Debug` is not implemented for `CapabilityContext<..., ...>`
+   = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-4010719124236942877.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+
+error[E0061]: this method takes 1 argument but 2 arguments were supplied
+   --> src/capabilities/camera.rs:104:14
+    |
+104 |               .request_from_shell(CameraOperation::CancelPending, |_: ...
+    |  ______________^^^^^^^^^^^^^^^^^^_________________________________-
+105 | |                 panic!("cancel should not produce event")
+106 | |             });
+    | |_____________- unexpected argument #2 of type `{closure@src/capabilities/camera.rs:104:65: 104:82}`
+    |
+note: method defined here
+   --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_core-0.14.0/src/capability/shell_request.rs:84:12
+    |
+ 84 | ...fn request_from_shell(&s...
+    |       ^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+104 -             .request_from_shell(CameraOperation::CancelPending, |_: CameraResult| {
+105 -                 panic!("cancel should not produce event")
+106 -             });
+104 +             .request_from_shell(CameraOperation::CancelPending);
+    |
+
+error[E0616]: field `inputs` of struct `Session` is private
+   --> src/vision.rs:183:29
+    |
+183 | ...on.inputs.firs...
+    |       ^^^^^^ private field
+    |
+help: a method `inputs` also exists, call it with parentheses
+    |
+183 |         let input = session.inputs().first().ok_or_else(|| {
+    |                                   ++
+
+error[E0616]: field `outputs` of struct `Session` is private
+   --> src/vision.rs:211:30
+    |
+211 | ...on.outputs.fir...
+    |       ^^^^^^^ private field
+    |
+help: a method `outputs` also exists, call it with parentheses
+    |
+211 |         let output = session.outputs().first().ok_or_else(|| {
+    |                                     ++
+
+error[E0631]: type mismatch in function arguments
+   --> src/vision.rs:278:22
+    |
+ 52 |     Decode(#[source] image::ImageError),
+    |     ------ found signature defined here
+...
+278 |             .map_err(VisionError::Decode)?;
+    |              ------- ^^^^^^^^^^^^^^^^^^^ expected due to this
+    |              |
+    |              required by a bound introduced by this call
+    |
+    = note: expected function signature `fn(std::io::Error) -> _`
+               found function signature `fn(image::ImageError) -> _`
+note: required by a bound in `Result::<T, E>::map_err`
+   --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/result.rs:964:12
+    |
+962 | ...const fn map_err<F, O>(self,...
+    |             ------- required by a bound in this associated function
+963 | ...e
+964 | ...O: [const] FnOnce(E) -> F + ...
+    |       ^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`
+help: consider wrapping the function in a closure
+    |
+278 |             .map_err(|arg0: std::io::Error| VisionError::Decode(/* image::ImageError */))?;
+    |                      ++++++++++++++++++++++                    +++++++++++++++++++++++++
+
+error[E0599]: no function or associated item named `from_seed` found for struct `StdRng` in the current scope
+    --> src/outbox.rs:1486:43
+     |
+1486 | ...g::from_seed(ra...
+     |       ^^^^^^^^^ function or associated item not found in `StdRng`
+     |
+     = help: items from traits can only be used if the trait is in scope
+help: trait `SeedableRng` which provides `from_seed` is implemented but not in scope; perhaps you want to import it
+     |
+   1 + use rand::SeedableRng;
+     |
+
+error[E0599]: no method named `status` found for reference `&&LocalCase` in the current scope
+    --> src/lib.rs:1703:27
+     |
+1703 | ... c.status().is...
+     |       ^^^^^^-- help: remove the arguments
+     |       |
+     |       field, not a method
+     |
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following traits define an item `status`, perhaps you need to implement one of them:
+             candidate #1: `Status`
+             candidate #2: `futures_task::spawn::Spawn`
+
+error[E0599]: no method named `status` found for reference `&&LocalCase` in the current scope
+    --> src/lib.rs:1713:27
+     |
+1713 | ... c.status().is...
+     |       ^^^^^^-- help: remove the arguments
+     |       |
+     |       field, not a method
+     |
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following traits define an item `status`, perhaps you need to implement one of them:
+             candidate #1: `Status`
+             candidate #2: `futures_task::spawn::Spawn`
+
+error[E0639]: cannot create non-exhaustive struct using struct expression
+    --> src/lib.rs:2849:26
+     |
+2849 |               let limits = imag...
+     |  __________________________^
+2850 | |                 max_image_wid...
+2851 | |                 max_image_hei...
+2852 | |                 max_alloc: So...
+2853 | |             };
+     | |_____________^
+
+error[E0308]: mismatched types
+    --> src/lib.rs:2852:33
+     |
+2852 | ...c: Some(MAX_IMAGE_ALLOC),
+     |       ---- ^^^^^^^^^^^^^^^ expected `u64`, found `usize`
+     |       |
+     |       arguments to this enum variant are incorrect
+     |
+help: the type constructed contains `usize` due to the type of the argument passed
+    --> src/lib.rs:2852:28
+     |
+2852 | ...c: Some(MAX_IMAGE_ALLOC),
+     |       ^^^^^---------------^
+     |            |
+     |            this argument influences the type of `Some`
+note: tuple variant defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:608:5
+     |
+ 608 |     Some(#[stabl...
+     |     ^^^^
+help: you can convert a `usize` to a `u64` and panic if the converted value doesn't fit
+     |
+2852 |                 max_alloc: Some(MAX_IMAGE_ALLOC.try_into().unwrap()),
+     |                                                ++++++++++++++++++++
+
+error[E0599]: no method named `with_limits` found for struct `ImageReader<R>` in the current scope
+    --> src/lib.rs:2856:18
+     |
+2855 |   ...et img = reader
+     |  _____________-
+2856 | | ...   .with_limits(li...
+     | |_______-^^^^^^^^^^^
+     |
+help: there is a method `limits` with a similar name
+     |
+2856 -                 .with_limits(limits)
+2856 +                 .limits(limits)
+     |
+
+error[E0282]: type annotations needed
+    --> src/lib.rs:2858:27
+     |
+2858 | ...r(|e| AppError::new(ErrorKind::ImageProcessing, e.to...
+     |       ^                                            - type must be known at this point
+     |
+help: consider giving this closure parameter an explicit type
+     |
+2858 |                 .map_err(|e: /* Type */| AppError::new(ErrorKind::ImageProcessing, e.to_string()))?;
+     |                            ++++++++++++
+
+error[E0282]: type annotations needed
+    --> src/lib.rs:2880:27
+     |
+2880 | ...r(|e| AppError::new(ErrorKind::ImageProcessing, e.to...
+     |       ^                                            - type must be known at this point
+     |
+help: consider giving this closure parameter an explicit type
+     |
+2880 |                 .map_err(|e: /* Type */| AppError::new(ErrorKind::ImageProcessing, e.to_string()))?;
+     |                            ++++++++++++
+
+error[E0061]: this method takes 1 argument but 3 arguments were supplied
+    --> src/lib.rs:2884:37
+     |
+2884 | ...or.detect(&raw_pixels, width, height);
+     |       ^^^^^^              -----  ------ unexpected argument #3
+     |                           |
+     |                           unexpected argument #2
+     |
+note: method defined here
+    --> src/vision.rs:398:12
+     |
+ 398 | ...fn detect(&se...
+     |       ^^^^^^
+help: remove the extra arguments
+     |
+2884 -                 let dets = detector.detect(&raw_pixels, width, height);
+2884 +                 let dets = detector.detect(&raw_pixels);
+     |
+
+error[E0599]: no method named `is_empty` found for enum `Result<T, E>` in the current scope
+    --> src/lib.rs:2886:40
+     |
+2886 | ...ts.is_empty() {
+     |       ^^^^^^^^ method not found in `Result<..., ...>`
+     |
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-16500260698545201666.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+    --> src/lib.rs:2887:72
+     |
+2887 | ... = crate::image_processing::merge_bboxes(&dets);
+     |       ------------------------------------- ^^^^^ expected `&[Detection]`, found `&Result<DetectionResult, VisionError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected reference `&[Detection]`
+                found reference `&Result<DetectionResult, VisionError>`
+note: function defined here
+    --> src/image_processing.rs:320:8
+     |
+ 320 | ...fn merge_bboxes(detections: &[Detection]) -...
+     |       ^^^^^^^^^^^^ ------------------------
+
+error[E0282]: type annotations needed
+    --> src/lib.rs:2914:35
+     |
+2914 | ... = detections.le...
+     |       ^^^^^^^^^^ cannot infer type
+
+error[E0308]: mismatched types
+    --> src/lib.rs:2990:34
+     |
+2990 | ...t: Box::new(result),
+     |       -------- ^^^^^^ expected `Result<HttpResponse, HttpError>`, found `Result<Response<Vec<u8>>, HttpError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected enum `Result<..., ...>`
+                found enum `Result<crux_http::Response<Vec<u8>>, crux_http::HttpError>`
+note: associated function defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:264:12
+     |
+ 264 | ...b fn new(x: T...
+     |         ^^^
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-5178453744896547529.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `HeaderName: From<...>` is not satisfied
+    --> src/lib.rs:3009:42
+     |
+3009 | ...er.header(key, v...
+     |       ------ ^^^ unsatisfied trait bound
+     |       |
+     |       required by a bound introduced by this call
+     |
+     = help: the trait `From<&std::string::String>` is not implemented for `HeaderName`
+help: the following other types implement trait `From<T>`
+    --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/http-types-red-badger-temporary-fork-2.12.0/src/headers/header_name.rs:85:1
+     |
+  85 | impl From<&HeaderName> for HeaderName {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `HeaderName` implements `From<&HeaderName>`
+...
+  91 | impl<'a> From<&'a str> for HeaderName {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `HeaderName` implements `From<&str>`
+     = note: required for `&String` to implement `Into<HeaderName>`
+note: required by a bound in `crux_http::RequestBuilder::<Event, ExpectBody>::header`
+    --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_http-0.14.0/src/request_builder.rs:100:39
+     |
+ 100 | ...pl Into<HeaderName>, v...
+     |       ^^^^^^^^^^^^^^^^ required by this bound in `RequestBuilder::<Event, ExpectBody>::header`
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-3112922855326359547.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3014:34
+     |
+3014 | ...t: Box::new(result),
+     |       -------- ^^^^^^ expected `Result<HttpResponse, HttpError>`, found `Result<Response<Vec<u8>>, HttpError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected enum `Result<..., ...>`
+                found enum `Result<crux_http::Response<Vec<u8>>, crux_http::HttpError>`
+note: associated function defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:264:12
+     |
+ 264 | ...b fn new(x: T...
+     |         ^^^
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-5178453744896547529.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3042:34
+     |
+3042 | ...t: Box::new(result),
+     |       -------- ^^^^^^ expected `Result<HttpResponse, HttpError>`, found `Result<Response<Vec<u8>>, HttpError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected enum `Result<..., ...>`
+                found enum `Result<crux_http::Response<Vec<u8>>, crux_http::HttpError>`
+note: associated function defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:264:12
+     |
+ 264 | ...b fn new(x: T...
+     |         ^^^
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-5178453744896547529.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3087:34
+     |
+3087 | ...t: Box::new(result),
+     |       -------- ^^^^^^ expected `Result<HttpResponse, HttpError>`, found `Result<Response<Vec<u8>>, HttpError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected enum `Result<..., ...>`
+                found enum `Result<crux_http::Response<Vec<u8>>, crux_http::HttpError>`
+note: associated function defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:264:12
+     |
+ 264 | ...b fn new(x: T...
+     |         ^^^
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-5178453744896547529.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3116:72
+     |
+3116 | ...se(Box::new(result)));
+     |       -------- ^^^^^^ expected `Result<HttpResponse, HttpError>`, found `Result<Response<Vec<u8>>, HttpError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected enum `Result<..., ...>`
+                found enum `Result<crux_http::Response<Vec<u8>>, crux_http::HttpError>`
+note: associated function defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:264:12
+     |
+ 264 | ...b fn new(x: T...
+     |         ^^^
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-5178453744896547529.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3118:71
+     |
+3118 | ...se(Box::new(result)));
+     |       -------- ^^^^^^ expected `Result<HttpResponse, HttpError>`, found `Result<Response<Vec<u8>>, HttpError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected enum `Result<..., ...>`
+                found enum `Result<crux_http::Response<Vec<u8>>, crux_http::HttpError>`
+note: associated function defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:264:12
+     |
+ 264 | ...b fn new(x: T...
+     |         ^^^
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-5178453744896547529.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3139:34
+     |
+3139 | ...t: Box::new(result),
+     |       -------- ^^^^^^ expected `Result<HttpResponse, HttpError>`, found `Result<Response<Vec<u8>>, HttpError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected enum `Result<..., ...>`
+                found enum `Result<crux_http::Response<Vec<u8>>, crux_http::HttpError>`
+note: associated function defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:264:12
+     |
+ 264 | ...b fn new(x: T...
+     |         ^^^
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-5178453744896547529.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: no variant or associated item named `Network` found for enum `HttpError` in the current scope
+    --> src/lib.rs:3145:28
+     |
+3145 | ...r::Network(ms...
+     |       ^^^^^^^ variant or associated item not found in `HttpError`
+     |
+    ::: src/capabilities/http.rs:682:1
+     |
+ 682 | pub enum HttpError {
+     | ------------------ variant or associated item `Network` not found for this enum
+     |
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-12461989827303367495.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: no variant or associated item named `Other` found for enum `HttpError` in the current scope
+    --> src/lib.rs:3152:28
+     |
+3152 | ...r::Other(msg)...
+     |       ^^^^^ variant or associated item not found in `HttpError`
+     |
+    ::: src/capabilities/http.rs:682:1
+     |
+ 682 | pub enum HttpError {
+     | ------------------ variant or associated item `Other` not found for this enum
+     |
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-12461989827303367495.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: no variant named `Status` found for enum `HttpError`
+    --> src/lib.rs:3345:69
+     |
+3345 | ...r::Status {
+     |       ^^^^^^ variant not found in `capabilities::http::HttpError`
+     |
+    ::: src/capabilities/http.rs:682:1
+     |
+ 682 | pub enum HttpError {
+     | ------------------ variant `Status` not found here
+     |
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-12461989827303367495.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: no variant named `Status` found for enum `HttpError`
+    --> src/lib.rs:3389:69
+     |
+3389 | ...r::Status {
+     |       ^^^^^^ variant not found in `capabilities::http::HttpError`
+     |
+    ::: src/capabilities/http.rs:682:1
+     |
+ 682 | pub enum HttpError {
+     | ------------------ variant `Status` not found here
+     |
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-12461989827303367495.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+    --> src/lib.rs:3465:28
+     |
+3465 | ...et Some(model_bytes) = ...
+     |       ^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+     |
+     = help: the trait `Sized` is not implemented for `[u8]`
+note: required by a bound in `std::prelude::v1::Some`
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/core/src/option.rs:600:17
+     |
+ 600 | pub enum Option<T> {
+     |                 ^ required by this bound in `std::prelude::v1::Some`
+...
+ 608 |     Some(#[stable(fe...
+     |     ---- required by a bound in this tuple variant
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3681:57
+     |
+3681 | ... { granted }
+     |       ^^^^^^^ expected `bool`, found `Result<CameraOutput, CameraError>`
+     |
+     = note: expected type `bool`
+                found enum `Result<CameraOutput, CameraError>`
+
+error[E0599]: no method named `capture` found for struct `Camera<E>` in the current scope
+    --> src/lib.rs:3711:33
+     |
+3711 | ...ra.capture(|r...
+     |       ^^^^^^^
+     |
+    ::: src/capabilities/camera.rs:12:1
+     |
+  12 | pub struct Camera<E> {
+     | -------------------- method `capture` not found for this struct
+     |
+help: there is a method `capture_photo` with a similar name, but with different arguments
+    --> src/capabilities/camera.rs:71:5
+     |
+  71 | /     pub fn capture_photo<F>(&self, config: CaptureConfig,...
+  72 | |     where
+  73 | |         F: FnOnce(CameraResult) -> E + Send + 'static,
+     | |______________________________________________________^
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3720:62
+     |
+3720 | ...ch Self::process_camera_image(img.data(), m...
+     |       -------------------------- ^^^^^^^^^^ expected `Vec<u8>`, found `&[u8]`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected struct `Vec<u8>`
+             found reference `&[u8]`
+note: associated function defined here
+    --> src/lib.rs:2827:12
+     |
+2827 | ...fn process_camera_image(
+     |       ^^^^^^^^^^^^^^^^^^^^
+2828 | ...    data: Vec<u8>,
+     |        -------------
+help: try using a conversion method
+     |
+3720 |                             match Self::process_camera_image(img.data().to_vec(), model, caps) {
+     |                                                                        +++++++++
+
+error[E0533]: expected unit struct, unit variant or constant, found struct variant `CameraError::Unavailable`
+    --> src/lib.rs:3738:33
+     |
+3738 | ...   CameraError::Unavailable =>...
+     |       ^^^^^^^^^^^^^^^^^^^^^^^^ not a unit struct, unit variant or constant
+     |
+help: the struct variant's field is being ignored
+     |
+3738 |                                 CameraError::Unavailable { reason: _ } => AppError::new(
+     |                                                          +++++++++++++
+
+error[E0599]: no variant or associated item named `Failed` found for enum `CameraError` in the current scope
+    --> src/lib.rs:3742:46
+     |
+3742 | ...r::Failed(msg...
+     |       ^^^^^^ variant or associated item not found in `CameraError`
+     |
+    ::: src/capabilities/camera.rs:597:1
+     |
+ 597 | pub enum CameraError {
+     | -------------------- variant or associated item `Failed` not found for this enum
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3845:28
+     |
+3844 | ....kv.set(&key_id, data, |result| match result {
+     |                                          ------ this expression has type `Result<..., ...>`
+3845 | ...Ok(()) => Event::PersistenceSucceeded,
+     |       ^^ expected `Option<Vec<u8>>`, found `()`
+     |
+     = note:   expected enum `std::option::Option<Vec<u8>>`
+             found unit type `()`
+     = note: the full name for the type has been written to '/Users/rezwanurrahmanlabib/WarmStreet/shared/target/debug/deps/shared-e029926684aede57.long-type-104726949695879866.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3844:33
+     |
+3844 | ...kv.set(&key_id, d...
+     |       --- ^^^^^^^ expected `String`, found `&String`
+     |       |
+     |       arguments to this method are incorrect
+     |
+note: method defined here
+    --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_kv-0.8.0/src/lib.rs:195:12
+     |
+ 195 | ...b fn set<F>(&...
+     |         ^^^
+help: consider removing the borrow
+     |
+3844 -                     caps.kv.set(&key_id, data, |result| match result {
+3844 +                     caps.kv.set(key_id, data, |result| match result {
+     |
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3865:46
+     |
+3865 | ...t: Box::new(result),
+     |       -------- ^^^^^^ expected `Result<Vec<u8>, KvError>`, found `Result<Option<Vec<u8>>, KeyValueError>`
+     |       |
+     |       arguments to this function are incorrect
+     |
+     = note: expected enum `Result<Vec<_>, KvError>`
+                found enum `Result<std::option::Option<Vec<_>>, KeyValueError>`
+note: associated function defined here
+    --> /Users/rezwanurrahmanlabib/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/alloc/src/boxed.rs:264:12
+     |
+ 264 | ...b fn new(x: T...
+     |         ^^^
+
+error[E0308]: mismatched types
+    --> src/lib.rs:3864:37
+     |
+3864 | ...kv.get(&key_id, |...
+     |       --- ^^^^^^^ expected `String`, found `&String`
+     |       |
+     |       arguments to this method are incorrect
+     |
+note: method defined here
+    --> /Users/rezwanurrahmanlabib/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/crux_kv-0.8.0/src/lib.rs:170:12
+     |
+ 170 | ...b fn get<F>(&...
+     |         ^^^
+help: consider removing the borrow
+     |
+3864 -                         caps.kv.get(&key_id, |result| Event::RestoreStateResponse {
+3864 +                         caps.kv.get(key_id, |result| Event::RestoreStateResponse {
+     |
+
+error[E0533]: expected unit struct, unit variant or constant, found struct variant `KvError::NotFound`
+    --> src/lib.rs:3885:29
+     |
+3885 | ...rr(KvError::NotFound) => {
+     |       ^^^^^^^^^^^^^^^^^ not a unit struct, unit variant or constant
+     |
+help: the struct variant's field is being ignored
+     |
+3885 |                         Err(KvError::NotFound { key: _ }) => {
+     |                                               ++++++++++
+
+error[E0310]: the parameter type `E` may not live long enough
+  --> src/capabilities/crypto.rs:36:9
+   |
+36 | /         self.con...
+37 | |             let ...
+38 | |             ctx....
+39 | |         });
+   | |          ^
+   | |          |
+   | |__________the parameter type `E` must be valid for the static lifetime...
+   |            ...so that the type `E` will meet its required lifetime bounds
+   |
+help: consider adding an explicit lifetime bound
+   |
+26 | impl<E: 'static> Crypto<E> {
+   |       +++++++++
+
+error[E0310]: the parameter type `E` may not live long enough
+  --> src/capabilities/crypto.rs:37:26
+   |
+37 | ... = ctx.request_from_shell(CryptoOperation::Encrypt { key_id, plaintext }).aw...
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |       |
+   |       the parameter type `E` must be valid for the static lifetime...
+   |       ...so that the type `E` will meet its required lifetime bounds
+   |
+help: consider adding an explicit lifetime bound
+   |
+26 | impl<E: 'static> Crypto<E> {
+   |       +++++++++
+
+error[E0310]: the parameter type `E` may not live long enough
+  --> src/capabilities/crypto.rs:38:13
+   |
+38 | ...   ctx.update_app(callback(result));
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |       |
+   |       the parameter type `E` must be valid for the static lifetime...
+   |       ...so that the type `E` will meet its required lifetime bounds
+   |
+help: consider adding an explicit lifetime bound
+   |
+26 | impl<E: 'static> Crypto<E> {
+   |       +++++++++
+
+error[E0310]: the parameter type `E` may not live long enough
+  --> src/capabilities/crypto.rs:47:9
+   |
+47 | /         self.con...
+48 | |             let ...
+49 | |             ctx....
+50 | |         });
+   | |          ^
+   | |          |
+   | |__________the parameter type `E` must be valid for the static lifetime...
+   |            ...so that the type `E` will meet its required lifetime bounds
+   |
+help: consider adding an explicit lifetime bound
+   |
+26 | impl<E: 'static> Crypto<E> {
+   |       +++++++++
+
+error[E0310]: the parameter type `E` may not live long enough
+  --> src/capabilities/crypto.rs:48:26
+   |
+48 | ... = ctx.request_from_shell(CryptoOperation::Decrypt { key_id, ciphertext }).aw...
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |       |
+   |       the parameter type `E` must be valid for the static lifetime...
+   |       ...so that the type `E` will meet its required lifetime bounds
+   |
+help: consider adding an explicit lifetime bound
+   |
+26 | impl<E: 'static> Crypto<E> {
+   |       +++++++++
+
+error[E0310]: the parameter type `E` may not live long enough
+  --> src/capabilities/crypto.rs:49:13
+   |
+49 | ...   ctx.update_app(callback(result));
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |       |
+   |       the parameter type `E` must be valid for the static lifetime...
+   |       ...so that the type `E` will meet its required lifetime bounds
+   |
+help: consider adding an explicit lifetime bound
+   |
+26 | impl<E: 'static> Crypto<E> {
+   |       +++++++++
+
+warning: unused variable: `callback`
+  --> src/capabilities/location.rs:34:41
+   |
+34 | ...f, callback: F)
+   |       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_callback`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `timeout_ms`
+   --> src/capabilities/outbox.rs:518:64
+    |
+518 | ...s, timeout_ms: u...
+    |       ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_timeout_ms`
+
+warning: unused variable: `callback`
+  --> src/capabilities/push.rs:34:41
+   |
+34 | ...f, callback: F)
+   |       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_callback`
+
+warning: unused variable: `callback`
+  --> src/capabilities/push.rs:55:46
+   |
+55 | ...g, callback: F)
+   |       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_callback`
+
+warning: unused variable: `callback`
+  --> src/capabilities/push.rs:65:33
+   |
+65 | ...f, callback: F)
+   |       ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_callback`
+
+warning: value assigned to `result` is never read
+   --> src/vision.rs:743:22
+    |
+743 | ... = Vec::with_capacity(keep_indices.len());
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `quality`
+   --> src/image_processing.rs:409:36
+    |
+409 | ...e, quality: u8...
+    |       ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_quality`
+
+warning: unused variable: `timeout_ms`
+   --> src/outbox.rs:518:64
+    |
+518 | ...s, timeout_ms: u...
+    |       ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_timeout_ms`
+
+warning: unused variable: `e`
+    --> src/lib.rs:2566:21
+     |
+2566 | ... Err(e) => {
+     |         ^ help: if this is intentional, prefix it with an underscore: `_e`
+
+warning: unused variable: `caps`
+    --> src/lib.rs:3407:13
+     |
+3407 | ...   caps: &Cap...
+     |       ^^^^ help: if this is intentional, prefix it with an underscore: `_caps`
+
+warning: unused variable: `e`
+    --> src/lib.rs:3427:29
+     |
+3427 | ... Err(e) => {
+     |         ^ help: if this is intentional, prefix it with an underscore: `_e`
+
+warning: unused variable: `output`
+    --> src/lib.rs:3432:20
+     |
+3432 | ...Ok(output) => {
+     |       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_output`
+
+warning: unused variable: `e`
+    --> src/lib.rs:3435:21
+     |
+3435 | ... Err(e) => {
+     |         ^ help: if this is intentional, prefix it with an underscore: `_e`
+
+Some errors have detailed explanations: E0061, E0276, E0277, E0282, E0308, E0310, E0369, E0425, E0499...
+For more information about an error, try `rustc --explain E0061`.
+warning: `shared` (lib) generated 16 warnings
+error: could not compile `shared` (lib) due to 71 previous errors; 16 warnings emitted

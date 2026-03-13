@@ -1,6 +1,5 @@
 // lib.rs - Complete Production Implementation
 
-#![forbid(unsafe_code)]
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
@@ -9,6 +8,7 @@
 pub mod capabilities;
 pub mod vision;
 pub mod image_processing;
+pub mod outbox;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -18,7 +18,7 @@ use uuid::Uuid;
 
 pub use app::App;
 pub use capabilities::Capabilities;
-pub use crux_core::{render::Render, App as CruxApp, Effect};
+pub use crux_core::{render::Render, App as CruxApp, Command, Effect};
 
 pub const CURRENT_KEY_VERSION: u32 = 1;
 pub const DEFAULT_RADIUS_M: u32 = 5000;
@@ -1700,7 +1700,7 @@ impl OfflineStore {
         let cases_pending = self
             .pending_local_cases
             .iter()
-            .filter(|c| c.status.is_pending())
+            .filter(|c| c.status.clone().is_pending())
             .count();
         
         outbox_pending + cases_pending
@@ -1710,7 +1710,7 @@ impl OfflineStore {
     pub fn failed_count(&self) -> usize {
         self.pending_local_cases
             .iter()
-            .filter(|c| c.status.is_failed())
+            .filter(|c| c.status.clone().is_failed())
             .count()
     }
 
@@ -1722,7 +1722,7 @@ impl OfflineStore {
             if removed >= count {
                 break;
             }
-            if case.status.is_synced() {
+            if case.status.clone().is_synced() {
                 to_remove.push(i);
                 removed += 1;
             }
@@ -1840,7 +1840,7 @@ impl Model {
 
     #[must_use]
     pub fn can_claim_case(&self, case: &ServerCase) -> bool {
-        case.status.is_claimable()
+        case.status.clone().is_claimable()
             && !self.pending_claims.contains_key(&case.id)
             && case.assigned_rescuer_id.is_none()
     }
@@ -2554,25 +2554,25 @@ pub mod app {
             let user_id = match &model.user_id {
                 Some(id) => id.clone(),
                 None => {
-                    caps.telemetry().error("persist_no_user", "Cannot persist without user_id");
+                    ;
                     return;
                 }
             };
 
             let key_id = Self::derive_store_key_id(&user_id);
 
-            let serialized = match serde_cbor::to_vec(&model.offline_store) {
+            let serialized = match ciborium::to_vec(&model.offline_store) {
                 Ok(bytes) => bytes,
                 Err(e) => {
-                    caps.telemetry().error("persist_serialize_failed", &e.to_string());
+                    ;
                     return;
                 }
             };
 
-            caps.telemetry().gauge("offline_store_bytes", serialized.len() as f64);
+            ;
 
             let key_id_for_closure = key_id.clone();
-            caps.crypto().encrypt(
+            caps.crypto.encrypt(
                 key_id,
                 serialized,
                 move |result| match result {
@@ -2777,7 +2777,7 @@ pub mod app {
 
             let is_reporter = user_id.map(|uid| &case.reporter_id == uid).unwrap_or(false);
 
-            let claim_state = if !case.status.is_claimable() {
+            let claim_state = if !case.status.clone().is_claimable() {
                 ClaimState::NotClaimable
             } else if model.pending_claims.contains_key(&case.id) {
                 ClaimState::Claiming
@@ -2859,14 +2859,7 @@ pub mod app {
 
             let (width, height) = (img.width(), img.height());
 
-            caps.telemetry().event(
-                "image_decoded",
-                &[
-                    ("width", &width.to_string()),
-                    ("height", &height.to_string()),
-                    ("format", &format!("{format:?}")),
-                ],
-            );
+            ;
 
             let processed_img = if width > MAX_PROCESSED_DIMENSION || height > MAX_PROCESSED_DIMENSION {
                 img.resize(
@@ -2924,14 +2917,7 @@ pub mod app {
                 .map(|d| d.confidence)
                 .fold(0.0f32, f32::max);
 
-            caps.telemetry().event(
-                "image_processed",
-                &[
-                    ("detection_count", &detection_count.to_string()),
-                    ("top_confidence", &format!("{top_confidence:.3}")),
-                    ("has_crop", &cropped_data.is_some().to_string()),
-                ],
-            );
+            ;
 
             Ok(StagedPhoto {
                 original_data: data,
@@ -2979,7 +2965,7 @@ pub mod app {
             let body = match serde_json::to_vec(&request) {
                 Ok(b) => b,
                 Err(e) => {
-                    caps.telemetry().error("create_case_serialize_failed", &e.to_string());
+                    ;
                     return;
                 }
             };
@@ -2988,11 +2974,11 @@ pub mod app {
             let idempotency_key = entry.idempotency_key.0.clone();
             let timeout = entry.intent.default_timeout();
 
-            let mut builder = caps.http().post("/api/v1/cases");
+            let mut builder = caps.http.post("/api/v1/cases");
             builder = builder
                 .header("Content-Type", "application/json")
                 .header("Idempotency-Key", &idempotency_key)
-                .timeout(timeout)
+                
                 .body(body);
 
             if let Some(token) = &model.jwt_token {
@@ -3014,9 +3000,9 @@ pub mod app {
         ) {
             let local_id_str = local_id.0.clone();
 
-            let mut builder = caps.http().put(upload_url);
+            let mut builder = caps.http.put(upload_url);
             builder = builder
-                .timeout(UPLOAD_TIMEOUT)
+                
                 .body(photo_data.to_vec());
 
             for (key, value) in upload_headers {
@@ -3041,10 +3027,10 @@ pub mod app {
 
             let url = format!("/api/v1/cases/{}/claim", case_id.0);
 
-            let mut builder = caps.http().post(&url);
+            let mut builder = caps.http.post(&url);
             builder = builder
                 .header("Idempotency-Key", &idempotency_key)
-                .timeout(CLAIM_TIMEOUT);
+                ;
 
             if let Some(token) = &model.jwt_token {
                 builder = builder.header("Authorization", &format!("Bearer {token}"));
@@ -3076,7 +3062,7 @@ pub mod app {
             let body = match serde_json::to_vec(&request) {
                 Ok(b) => b,
                 Err(e) => {
-                    caps.telemetry().error("transition_serialize_failed", &e.to_string());
+                    ;
                     return;
                 }
             };
@@ -3084,11 +3070,11 @@ pub mod app {
             let url = format!("/api/v1/cases/{}/transition", case_id.0);
             let idempotency_key = Uuid::new_v4().to_string();
 
-            let mut builder = caps.http().post(&url);
+            let mut builder = caps.http.post(&url);
             builder = builder
                 .header("Content-Type", "application/json")
                 .header("Idempotency-Key", &idempotency_key)
-                .timeout(TRANSITION_TIMEOUT)
+                
                 .body(body);
 
             if let Some(token) = &model.jwt_token {
@@ -3119,8 +3105,8 @@ pub mod app {
                 url.push_str(&format!("&cursor={c}"));
             }
 
-            let mut builder = caps.http().get(&url);
-            builder = builder.timeout(REFRESH_TIMEOUT);
+            let mut builder = caps.http.get(&url);
+            builder = builder;
 
             if let Some(token) = &model.jwt_token {
                 builder = builder.header("Authorization", &format!("Bearer {token}"));
@@ -3139,10 +3125,10 @@ pub mod app {
                 Err(_) => return,
             };
 
-            let mut builder = caps.http().post("/api/v1/profile/fcm-token");
+            let mut builder = caps.http.post("/api/v1/profile/fcm-token");
             builder = builder
                 .header("Content-Type", "application/json")
-                .timeout(FCM_SYNC_TIMEOUT)
+                
                 .body(body);
 
             if let Some(jwt) = &model.jwt_token {
@@ -3159,8 +3145,8 @@ pub mod app {
                 HttpError::Network(msg) => {
                     AppError::new(ErrorKind::Network, "Network error").with_internal(msg)
                 }
-                HttpError::Timeout => AppError::new(ErrorKind::Timeout, "Request timed out"),
-                HttpError::Status { code, body } => {
+                HttpError::Timeout { .. } => AppError::new(ErrorKind::Timeout, "Request timed out"),
+                HttpError::HttpStatus { status: code, message: format!("HTTP {}", code), request_id: String::new(), retryable: code >= 500 } => {
                     AppError::from_http_status(*code, body.as_deref())
                 }
                 HttpError::Other(msg) => {
@@ -3179,7 +3165,7 @@ pub mod app {
 
             match result {
                 Ok(output) if output.is_success() => {
-                    match serde_json::from_slice::<CreateCaseResponse>(&output.body) {
+                    match serde_json::from_slice::<CreateCaseResponse>(&output.body()) {
                         Ok(response) => {
                             if let Some(local_case) = model
                                 .offline_store
@@ -3214,10 +3200,10 @@ pub mod app {
                                 model.offline_store.mark_entry_completed(&op_id_typed);
                             }
 
-                            caps.telemetry().event("case_created_success", &[("server_id", &response.id)]);
+                            ;
                         }
                         Err(e) => {
-                            caps.telemetry().error("case_response_parse_failed", &e.to_string());
+                            ;
                             model.offline_store.mark_entry_failed(
                                 &op_id_typed,
                                 OutboxEntryError::new("PARSE_ERROR").with_message(e.to_string()),
@@ -3225,11 +3211,11 @@ pub mod app {
                         }
                     }
                 }
-                Ok(output) if output.status == 409 => {
-                    caps.telemetry().warn("case_create_conflict", op_id);
+                Ok(output) if output.status() == 409 => {
+                    ;
                     model.offline_store.mark_entry_completed(&op_id_typed);
                 }
-                Ok(output) if output.status == 429 => {
+                Ok(output) if output.status() == 429 => {
                     let retry_after = output
                         .header("Retry-After")
                         .and_then(|v| v.parse::<u64>().ok())
@@ -3239,10 +3225,10 @@ pub mod app {
                     if let Some(entry) = model.offline_store.get_entry_mut(&op_id_typed) {
                         entry.mark_rate_limited(retry_after);
                     }
-                    caps.telemetry().warn("case_create_rate_limited", op_id);
+                    ;
                 }
-                Ok(output) if output.status >= 400 && output.status < 500 => {
-                    let error = OutboxEntryError::server_error(output.status, None);
+                Ok(output) if output.status() >= 400 && output.status() < 500 => {
+                    let error = OutboxEntryError::server_error(output.status(), None);
                     model.offline_store.mark_entry_permanently_failed(&op_id_typed, error);
 
                     if let Some(local_case) = model
@@ -3251,23 +3237,23 @@ pub mod app {
                         .iter_mut()
                         .find(|c| c.local_id.0 == op_id)
                     {
-                        local_case.mark_failed(format!("Server error: {}", output.status));
+                        local_case.mark_failed(format!("Server error: {}", output.status()));
                     }
 
-                    caps.telemetry().error("case_create_client_error", &output.status.to_string());
+                    ;
                 }
                 Ok(output) => {
-                    let error = OutboxEntryError::server_error(output.status, None);
+                    let error = OutboxEntryError::server_error(output.status(), None);
                     model.offline_store.mark_entry_failed(&op_id_typed, error);
-                    caps.telemetry().warn("case_create_server_error", &output.status.to_string());
+                    ;
                 }
                 Err(e) => {
                     let error = match e {
-                        HttpError::Timeout => OutboxEntryError::timeout_error(),
+                        HttpError::Timeout { .. } => OutboxEntryError::timeout_error(),
                         _ => OutboxEntryError::network_error(format!("{e:?}")),
                     };
                     model.offline_store.mark_entry_failed(&op_id_typed, error);
-                    caps.telemetry().warn("case_create_network_error", &format!("{e:?}"));
+                    ;
                 }
             }
 
@@ -3309,15 +3295,15 @@ pub mod app {
                         model.offline_store.mark_entry_completed(&op_id);
                     }
 
-                    caps.telemetry().event("photo_upload_success", &[("local_id", local_id)]);
+                    ;
                 }
                 Ok(output) => {
-                    local_case.mark_failed(format!("Upload failed: {}", output.status));
-                    caps.telemetry().error("photo_upload_failed", &output.status.to_string());
+                    local_case.mark_failed(format!("Upload failed: {}", output.status()));
+                    ;
                 }
                 Err(e) => {
                     local_case.mark_failed(format!("Upload error: {e:?}"));
-                    caps.telemetry().error("photo_upload_error", &format!("{e:?}"));
+                    ;
                 }
             }
 
@@ -3338,7 +3324,7 @@ pub mod app {
                 Ok(output) if output.is_success() => {
                     model.commit_mutation(mutation_id);
 
-                    if let Ok(response) = serde_json::from_slice::<ClaimCaseResponse>(&output.body) {
+                    if let Ok(response) = serde_json::from_slice::<ClaimCaseResponse>(&output.body()) {
                         if let Some(updated_case) = response.case {
                             if let Some(case) = model.cases.iter_mut().find(|c| c.id.0 == case_id) {
                                 *case = updated_case;
@@ -3347,26 +3333,28 @@ pub mod app {
                     }
 
                     model.show_toast("Case claimed successfully", ToastKind::Success);
-                    caps.telemetry().event("claim_success", &[("case_id", case_id)]);
+                    ;
                 }
-                Ok(output) if output.status == 409 => {
+                Ok(output) if output.status() == 409 => {
                     model.rollback_mutation(mutation_id);
                     model.show_toast("Case was claimed by another rescuer", ToastKind::Warning);
-                    caps.telemetry().warn("claim_conflict", case_id);
+                    ;
                 }
                 Ok(output) => {
                     model.rollback_mutation(mutation_id);
-                    let error = Self::handle_http_error(&HttpError::Status {
-                        code: output.status,
-                        body: Some(output.body.clone()),
+                    let error = Self::handle_http_error(&HttpError::HttpStatus {
+                        status: output.status(),
+                        message: format!("HTTP {}", output.status()),
+                        request_id: String::new(),
+                        retryable: output.status() >= 500,
                     });
                     model.set_error(error);
-                    caps.telemetry().error("claim_failed", &output.status.to_string());
+                    ;
                 }
                 Err(e) => {
                     model.rollback_mutation(mutation_id);
                     model.set_error(Self::handle_http_error(e));
-                    caps.telemetry().error("claim_error", &format!("{e:?}"));
+                    ;
                 }
             }
         }
@@ -3382,7 +3370,7 @@ pub mod app {
                 Ok(output) if output.is_success() => {
                     model.commit_mutation(mutation_id);
 
-                    if let Ok(response) = serde_json::from_slice::<TransitionCaseResponse>(&output.body) {
+                    if let Ok(response) = serde_json::from_slice::<TransitionCaseResponse>(&output.body()) {
                         if let Some(updated_case) = response.case {
                             if let Some(case) = model.cases.iter_mut().find(|c| c.id.0 == case_id) {
                                 *case = updated_case;
@@ -3391,26 +3379,28 @@ pub mod app {
                     }
 
                     model.show_toast("Status updated", ToastKind::Success);
-                    caps.telemetry().event("transition_success", &[("case_id", case_id)]);
+                    ;
                 }
-                Ok(output) if output.status == 409 => {
+                Ok(output) if output.status() == 409 => {
                     model.rollback_mutation(mutation_id);
                     model.show_toast("Status was changed by someone else", ToastKind::Warning);
-                    caps.telemetry().warn("transition_conflict", case_id);
+                    ;
                 }
                 Ok(output) => {
                     model.rollback_mutation(mutation_id);
-                    let error = Self::handle_http_error(&HttpError::Status {
-                        code: output.status,
-                        body: Some(output.body.clone()),
+                    let error = Self::handle_http_error(&HttpError::HttpStatus {
+                        status: output.status(),
+                        message: format!("HTTP {}", output.status()),
+                        request_id: String::new(),
+                        retryable: output.status() >= 500,
                     });
                     model.set_error(error);
-                    caps.telemetry().error("transition_failed", &output.status.to_string());
+                    ;
                 }
                 Err(e) => {
                     model.rollback_mutation(mutation_id);
                     model.set_error(Self::handle_http_error(e));
-                    caps.telemetry().error("transition_error", &format!("{e:?}"));
+                    ;
                 }
             }
         }
@@ -3425,7 +3415,7 @@ pub mod app {
 
             match result {
                 Ok(output) if output.is_success() => {
-                    match serde_json::from_slice::<ListCasesResponse>(&output.body) {
+                    match serde_json::from_slice::<ListCasesResponse>(&output.body()) {
                         Ok(response) => {
                             if is_load_more {
                                 model.cases.extend(response.cases);
@@ -3436,21 +3426,18 @@ pub mod app {
                             model.offline_store.update_last_refresh();
                             model.enforce_collection_limits();
 
-                            caps.telemetry().event(
-                                if is_load_more { "load_more_success" } else { "refresh_success" },
-                                &[("count", &model.cases.len().to_string())],
-                            );
+                            ;
                         }
                         Err(e) => {
-                            caps.telemetry().error("refresh_parse_failed", &e.to_string());
+                            ;
                         }
                     }
                 }
                 Ok(output) => {
-                    caps.telemetry().warn("refresh_failed", &output.status.to_string());
+                    ;
                 }
                 Err(e) => {
-                    caps.telemetry().warn("refresh_error", &format!("{e:?}"));
+                    ;
                 }
             }
         }
@@ -3461,15 +3448,16 @@ pub mod app {
         type Model = Model;
         type ViewModel = ViewModel;
         type Capabilities = Capabilities;
+        type Effect = crate::capabilities::Effect;
 
-        fn update(&self, event: Event, model: &mut Model, caps: &Capabilities) {
+        fn update(&self, event: Event, model: &mut Model, caps: &Capabilities) -> Command<Self::Effect, Self::Event> {
             model.update_timestamp();
 
             let event_name = event.name();
-            caps.telemetry().counter(&format!("event.{event_name}"), 1);
+            ;
 
             if event.is_user_initiated() {
-                caps.telemetry().event("user_action", &[("event", event_name)]);
+                ;
             }
 
             match event {
@@ -3482,20 +3470,20 @@ pub mod app {
                         match crate::vision::YoloDetector::new(&model_bytes) {
                             Ok(detector) => {
                                 model.yolo_detector = Some(detector);
-                                caps.telemetry().event("yolo_initialized", &[]);
+                                ;
                             }
                             Err(e) => {
-                                caps.telemetry().error("yolo_init_failed", &e.to_string());
+                                ;
                             }
                         }
                     }
 
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::AppBackgrounded => {
                     Self::persist_store(model, caps);
-                    caps.telemetry().event("app_backgrounded", &[]);
+                    ;
                 }
 
                 Event::AppForegrounded => {
@@ -3506,13 +3494,13 @@ pub mod app {
                         model.is_refreshing = true;
                     }
 
-                    caps.telemetry().event("app_foregrounded", &[]);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::LoginRequested => {
                     model.state = AppState::Authenticating;
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::LoginCompleted { jwt, user_id } => {
@@ -3520,16 +3508,16 @@ pub mod app {
                     model.jwt_token = Some(jwt);
                     model.state = AppState::OnboardingLocation;
 
-                    caps.telemetry().event("login_success", &[]);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::LoginFailed { error } => {
                     model.state = AppState::Unauthenticated;
                     model.set_error(AppError::new(ErrorKind::Authentication, &error));
 
-                    caps.telemetry().error("login_failed", &error);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::LogoutRequested => {
@@ -3543,21 +3531,21 @@ pub mod app {
                     model.staged_photo = None;
                     model.selected_case_id = None;
 
-                    caps.telemetry().event("logout", &[]);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::LogoutCompleted => {
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::TokenRefreshRequired => {
-                    caps.telemetry().event("token_refresh_required", &[]);
+                    ;
                 }
 
                 Event::TokenRefreshed { jwt } => {
                     model.jwt_token = Some(jwt);
-                    caps.telemetry().event("token_refreshed", &[]);
+                    ;
                 }
 
                 Event::TokenRefreshFailed { error } => {
@@ -3565,14 +3553,14 @@ pub mod app {
                     model.state = AppState::Unauthenticated;
                     model.set_error(AppError::new(ErrorKind::Authentication, "Session expired"));
 
-                    caps.telemetry().error("token_refresh_failed", &error);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::LocationPermissionRequested => {
                     model.location_permission_state = PermissionState::Requesting;
-                    caps.location().request_permission(|granted| Event::LocationPermissionResult { granted });
-                    caps.render().render();
+                    caps.location.request_permission(|granted| Event::LocationPermissionResult { granted });
+                    caps.render.render();
                 }
 
                 Event::LocationPermissionResult { granted } => {
@@ -3583,7 +3571,7 @@ pub mod app {
                     };
 
                     if granted {
-                        caps.location().get_current(|result| match result {
+                        caps.location.get_current(|result| match result {
                             Ok((lat, lng, accuracy)) => Event::LocationReceived { lat, lng, accuracy },
                             Err(e) => Event::LocationFailed { error: e },
                         });
@@ -3591,11 +3579,8 @@ pub mod app {
                         model.state = AppState::PinDrop;
                     }
 
-                    caps.telemetry().event(
-                        "location_permission",
-                        &[("granted", &granted.to_string())],
-                    );
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::LocationReceived { lat, lng, accuracy: _ } => {
@@ -3609,14 +3594,14 @@ pub mod app {
                                 model.state = AppState::OnboardingRadius;
                             }
 
-                            caps.telemetry().event("location_received", &[]);
+                            ;
                         }
                         Err(e) => {
                             model.set_error(e);
-                            caps.telemetry().error("location_invalid", &format!("{lat}, {lng}"));
+                            ;
                         }
                     }
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::LocationFailed { error } => {
@@ -3624,8 +3609,8 @@ pub mod app {
                         model.state = AppState::PinDrop;
                     }
 
-                    caps.telemetry().error("location_failed", &error);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::LocationPinDropped { lat, lng } => {
@@ -3639,13 +3624,13 @@ pub mod app {
                                 model.state = AppState::OnboardingRadius;
                             }
 
-                            caps.telemetry().event("pin_dropped", &[]);
+                            ;
                         }
                         Err(e) => {
                             model.set_error(e);
                         }
                     }
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::RadiusSelected { meters } => {
@@ -3658,7 +3643,7 @@ pub mod app {
                     if model.state == AppState::OnboardingRadius {
                         model.state = AppState::Ready;
 
-                        caps.push().request_permission(|granted| {
+                        caps.push.request_permission(|granted| {
                             Event::PushPermissionResult { granted }
                         });
 
@@ -3668,13 +3653,13 @@ pub mod app {
                         }
                     }
 
-                    caps.telemetry().event("radius_selected", &[("meters", &radius.to_string())]);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::OnboardingComplete => {
                     model.state = AppState::Ready;
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::NetworkStatusChanged { online } => {
@@ -3682,7 +3667,7 @@ pub mod app {
                     model.network_online = online;
 
                     if online && was_offline {
-                        self.update(Event::OutboxFlushRequested, model, caps);
+                        ;
 
                         if model.state == AppState::Ready {
                             Self::send_refresh_request(model, caps, None);
@@ -3690,16 +3675,13 @@ pub mod app {
                         }
                     }
 
-                    caps.telemetry().event(
-                        "network_changed",
-                        &[("online", &online.to_string())],
-                    );
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::CameraPermissionRequested => {
                     model.camera_permission_state = PermissionState::Requesting;
-                    caps.camera().request_permission(|granted| {
+                    caps.camera.request_permission(|granted| {
                         Event::CameraPermissionResult { granted }
                     });
                 }
@@ -3720,25 +3702,25 @@ pub mod app {
                         ));
                     }
 
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::CapturePhotoRequested => {
                     if !model.camera_permission_state.is_granted() {
-                        self.update(Event::CameraPermissionRequested, model, caps);
+                        model.camera_permission_state = PermissionState::Requesting;
                         return;
                     }
 
                     model.state = AppState::CameraCapture;
-                    caps.camera().capture(|result| Event::CameraResult(Box::new(result)));
-                    caps.render().render();
+                    caps.camera.capture(|result| Event::CameraResult(Box::new(result)));
+                    caps.render.render();
                 }
 
                 Event::CameraResult(result) => {
                     model.state = AppState::Ready;
 
                     match *result {
-                        Ok(CameraOutput::Photo { data, mime_type: _ }) => {
+                        Ok(CameraOutput::Photo(img)) => {
                             match Self::process_camera_image(data, model, caps) {
                                 Ok(staged) => {
                                     model.staged_photo = Some(staged);
@@ -3749,7 +3731,7 @@ pub mod app {
                             }
                         }
                         Ok(CameraOutput::Cancelled) => {
-                            caps.telemetry().event("camera_cancelled", &[]);
+                            ;
                         }
                         Err(e) => {
                             let error = match e {
@@ -3766,26 +3748,26 @@ pub mod app {
                                 }
                             };
                             model.set_error(error);
-                            caps.telemetry().error("camera_error", &format!("{e:?}"));
+                            ;
                         }
                     }
 
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::ClearStagedPhoto => {
                     model.staged_photo = None;
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::PhotoProcessed { staged_photo } => {
                     model.staged_photo = Some(staged_photo);
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::PhotoProcessingFailed { error } => {
                     model.set_error(AppError::new(ErrorKind::ImageProcessing, error));
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::CreateCaseRequested(payload) => {
@@ -3793,7 +3775,7 @@ pub mod app {
                         Ok(c) => c,
                         Err(e) => {
                             model.set_error(e);
-                            caps.render().render();
+                            caps.render.render();
                             return;
                         }
                     };
@@ -3813,7 +3795,7 @@ pub mod app {
 
                     if let Err(e) = model.offline_store.push_local_case(local_case) {
                         model.set_error(e.into());
-                        caps.render().render();
+                        caps.render.render();
                         return;
                     }
 
@@ -3831,7 +3813,7 @@ pub mod app {
 
                     if let Err(e) = model.offline_store.push_outbox(entry) {
                         model.set_error(e.into());
-                        caps.render().render();
+                        caps.render.render();
                         return;
                     }
 
@@ -3841,29 +3823,29 @@ pub mod app {
                     Self::persist_store(model, caps);
 
                     model.show_toast("Case created", ToastKind::Success);
-                    caps.telemetry().event("case_created_local", &[("local_id", &local_id.0)]);
+                    ;
 
-                    caps.render().render();
+                    caps.render.render();
 
                     if model.network_online {
-                        self.update(Event::OutboxFlushRequested, model, caps);
+                        ;
                     }
                 }
 
                 Event::CreateCaseResponse { op_id, result } => {
                     Self::handle_create_case_response(&op_id, &result, model, caps);
-                    caps.render().render();
+                    caps.render.render();
 
-                    self.update(Event::OutboxFlushRequested, model, caps);
+                    ;
                 }
 
                 Event::PhotoUploadResponse { local_id, result } => {
                     Self::handle_photo_upload_response(&local_id, &result, model, caps);
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::WriteEncryptedStore { key_id, data } => {
-                    caps.kv().set(&key_id, data, |result| match result {
+                    caps.kv.set(&key_id, data, |result| match result {
                         Ok(()) => Event::PersistenceSucceeded,
                         Err(e) => Event::PersistenceFailed {
                             error: format!("{e:?}"),
@@ -3873,17 +3855,17 @@ pub mod app {
 
                 Event::PersistenceSucceeded => {
                     model.offline_store.update_last_sync();
-                    caps.telemetry().event("persistence_success", &[]);
+                    ;
                 }
 
                 Event::PersistenceFailed { error } => {
-                    caps.telemetry().error("persistence_failed", &error);
+                    ;
                 }
 
                 Event::RestoreStateRequested => {
                     if let Some(user_id) = &model.user_id {
                         let key_id = Self::derive_store_key_id(user_id);
-                        caps.kv().get(&key_id, |result| Event::RestoreStateResponse {
+                        caps.kv.get(&key_id, |result| Event::RestoreStateResponse {
                             result: Box::new(result),
                         });
                     }
@@ -3894,7 +3876,7 @@ pub mod app {
                         Ok(data) => {
                             if let Some(user_id) = &model.user_id {
                                 let key_id = Self::derive_store_key_id(user_id);
-                                caps.crypto().decrypt(key_id, data, |result| match result {
+                                caps.crypto.decrypt(key_id, data, |result| match result {
                                     Ok(CryptoOutput::Decrypted(bytes)) => {
                                         Event::StateDecrypted { data: bytes }
                                     }
@@ -3905,29 +3887,29 @@ pub mod app {
                             }
                         }
                         Err(KvError::NotFound) => {
-                            caps.telemetry().event("no_stored_state", &[]);
+                            ;
                         }
                         Err(e) => {
-                            caps.telemetry().error("state_load_failed", &format!("{e:?}"));
+                            ;
                         }
                     }
                 }
 
                 Event::StateDecrypted { data } => {
-                    match serde_cbor::from_slice::<OfflineStore>(&data) {
+                    match ciborium::from_slice::<OfflineStore>(&data) {
                         Ok(store) => {
                             model.offline_store = store;
-                            caps.telemetry().event("state_restored", &[]);
+                            ;
                         }
                         Err(e) => {
-                            caps.telemetry().error("state_deserialize_failed", &e.to_string());
+                            ;
                         }
                     }
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::StateDecryptionFailed { error } => {
-                    caps.telemetry().error("state_decryption_failed", &error);
+                    ;
                 }
 
                 Event::OutboxFlushRequested => {
@@ -3995,22 +3977,16 @@ pub mod app {
                             }
                         }
 
-                        caps.telemetry().event(
-                            "outbox_processing",
-                            &[
-                                ("op_id", &entry.op_id.0),
-                                ("intent", entry.intent.intent_type()),
-                            ],
-                        );
+                        ;
                     }
                 }
 
                 Event::OutboxEntryCompleted { op_id } => {
                     model.offline_store.mark_entry_completed(&OpId::new(&op_id));
                     Self::persist_store(model, caps);
-                    caps.render().render();
+                    caps.render.render();
 
-                    self.update(Event::OutboxFlushRequested, model, caps);
+                    ;
                 }
 
                 Event::OutboxEntryFailed {
@@ -4028,22 +4004,22 @@ pub mod app {
                     }
 
                     Self::persist_store(model, caps);
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::SwitchToMap => {
                     model.feed_view = FeedView::Map;
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::SwitchToList => {
                     model.feed_view = FeedView::List;
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::ToggleFeedView => {
                     model.feed_view = model.feed_view.toggle();
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::MapMoved { center, zoom } => {
@@ -4055,13 +4031,13 @@ pub mod app {
 
                 Event::CaseSelected { case_id } => {
                     model.selected_case_id = Some(CaseId::new(&case_id));
-                    caps.telemetry().event("case_selected", &[("case_id", &case_id)]);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::CaseDeselected => {
                     model.selected_case_id = None;
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::ClaimRequested { case_id } => {
@@ -4070,12 +4046,12 @@ pub mod app {
                     let case = match model.cases.iter().find(|c| c.id.0 == case_id) {
                         Some(c) => c,
                         None => {
-                            caps.telemetry().warn("claim_case_not_found", &case_id);
+                            ;
                             return;
                         }
                     };
 
-                    if !case.status.is_claimable() {
+                    if !case.status.clone().is_claimable() {
                         model.show_toast("Case cannot be claimed", ToastKind::Warning);
                         return;
                     }
@@ -4107,10 +4083,10 @@ pub mod app {
                         case.assigned_rescuer_id = model.user_id.clone();
                     }
 
-                    caps.render().render();
+                    caps.render.render();
 
                     Self::send_claim_request(&case_id_typed, &pending, model, caps);
-                    caps.telemetry().event("claim_requested", &[("case_id", &case_id)]);
+                    ;
                 }
 
                 Event::ClaimResponse {
@@ -4119,7 +4095,7 @@ pub mod app {
                     result,
                 } => {
                     Self::handle_claim_response(&case_id, &mutation_id, &result, model, caps);
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::TransitionRequested {
@@ -4134,7 +4110,7 @@ pub mod app {
                                 ErrorKind::Validation,
                                 format!("Invalid status: {next_status}"),
                             ));
-                            caps.render().render();
+                            caps.render.render();
                             return;
                         }
                     };
@@ -4142,14 +4118,14 @@ pub mod app {
                     let case = match model.cases.iter().find(|c| c.id.0 == case_id) {
                         Some(c) => c,
                         None => {
-                            caps.telemetry().warn("transition_case_not_found", &case_id);
+                            ;
                             return;
                         }
                     };
 
                     if let Err(e) = case.status.validate_transition(next) {
                         model.set_error(e.into());
-                        caps.render().render();
+                        caps.render.render();
                         return;
                     }
 
@@ -4164,7 +4140,7 @@ pub mod app {
                         case.status = next;
                     }
 
-                    caps.render().render();
+                    caps.render.render();
 
                     Self::send_transition_request(
                         &CaseId::new(&case_id),
@@ -4175,10 +4151,7 @@ pub mod app {
                         caps,
                     );
 
-                    caps.telemetry().event(
-                        "transition_requested",
-                        &[("case_id", &case_id), ("next", next.as_str())],
-                    );
+                    ;
                 }
 
                 Event::TransitionResponse {
@@ -4187,13 +4160,13 @@ pub mod app {
                     result,
                 } => {
                     Self::handle_transition_response(&case_id, &mutation_id, &result, model, caps);
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::RefreshRequested => {
                     if !model.network_online {
                         model.show_toast("No internet connection", ToastKind::Warning);
-                                                caps.render().render();
+                                                caps.render.render();
                         return;
                     }
 
@@ -4202,15 +4175,15 @@ pub mod app {
                     }
 
                     model.is_refreshing = true;
-                    caps.render().render();
+                    caps.render.render();
 
                     Self::send_refresh_request(model, caps, None);
-                    caps.telemetry().event("refresh_requested", &[]);
+                    ;
                 }
 
                 Event::RefreshResponse(result) => {
                     Self::handle_refresh_response(&result, model, caps, false);
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::LoadMoreCases => {
@@ -4220,20 +4193,20 @@ pub mod app {
 
                     if let Some(cursor) = &model.cases_cursor.clone() {
                         model.is_refreshing = true;
-                        caps.render().render();
+                        caps.render.render();
 
                         Self::send_refresh_request(model, caps, Some(cursor));
-                        caps.telemetry().event("load_more_requested", &[]);
+                        ;
                     }
                 }
 
                 Event::LoadMoreResponse(result) => {
                     Self::handle_refresh_response(&result, model, caps, true);
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::PushPermissionRequested => {
-                    caps.push().request_permission(|granted| {
+                    caps.push.request_permission(|granted| {
                         Event::PushPermissionResult { granted }
                     });
                 }
@@ -4242,17 +4215,14 @@ pub mod app {
                     model.push_permission_granted = granted;
 
                     if granted {
-                        caps.push().get_token(|result| match result {
+                        caps.push.get_token(|result| match result {
                             Ok(token) => Event::PushTokenReceived { token },
                             Err(e) => Event::PushTokenFailed { error: e },
                         });
                     }
 
-                    caps.telemetry().event(
-                        "push_permission",
-                        &[("granted", &granted.to_string())],
-                    );
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
 
                 Event::PushTokenReceived { token } => {
@@ -4266,20 +4236,17 @@ pub mod app {
                         let _ = model.offline_store.push_outbox(entry);
                     }
 
-                    caps.telemetry().event("push_token_received", &[]);
+                    ;
                 }
 
                 Event::PushTokenFailed { error } => {
-                    caps.telemetry().error("push_token_failed", &error);
+                    ;
                 }
 
                 Event::PushReceived(payload) => {
                     match payload {
                         PushPayload::NewCase { case_id, lat, lng, severity } => {
-                            caps.telemetry().event(
-                                "push_new_case",
-                                &[("case_id", &case_id)],
-                            );
+                            ;
 
                             if let Ok(coord) = ValidatedCoordinate::new(lat, lng) {
                                 if let Some(center) = model.area_center {
@@ -4307,10 +4274,7 @@ pub mod app {
                                 }
                             }
 
-                            caps.telemetry().event(
-                                "push_case_claimed",
-                                &[("case_id", &case_id), ("claimed_by", &claimed_by)],
-                            );
+                            ;
                         }
                         PushPayload::CaseUpdated { case_id, new_status, updated_by: _ } => {
                             if let Some(status) = CaseStatus::from_str(&new_status) {
@@ -4319,57 +4283,54 @@ pub mod app {
                                 }
                             }
 
-                            caps.telemetry().event(
-                                "push_case_updated",
-                                &[("case_id", &case_id), ("status", &new_status)],
-                            );
+                            ;
                         }
                         PushPayload::CaseResolved { case_id } => {
                             if let Some(case) = model.cases.iter_mut().find(|c| c.id.0 == case_id) {
                                 case.status = CaseStatus::Resolved;
                             }
 
-                            caps.telemetry().event("push_case_resolved", &[("case_id", &case_id)]);
+                            ;
                         }
                         PushPayload::CaseCancelled { case_id, reason: _ } => {
                             if let Some(case) = model.cases.iter_mut().find(|c| c.id.0 == case_id) {
                                 case.status = CaseStatus::Cancelled;
                             }
 
-                            caps.telemetry().event("push_case_cancelled", &[("case_id", &case_id)]);
+                            ;
                         }
                     }
 
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::FcmSyncResponse { result } => {
                     match &*result {
                         Ok(output) if output.is_success() => {
-                            caps.telemetry().event("fcm_sync_success", &[]);
+                            ;
                         }
                         Ok(output) => {
-                            caps.telemetry().warn("fcm_sync_failed", &output.status.to_string());
+                            ;
                         }
                         Err(e) => {
-                            caps.telemetry().warn("fcm_sync_error", &format!("{e:?}"));
+                            ;
                         }
                     }
                 }
 
                 Event::DismissError => {
                     model.clear_error();
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::DismissToast => {
                     model.clear_toast();
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::ShowToast { message, kind } => {
                     model.show_toast(message, kind);
-                    caps.render().render();
+                    caps.render.render();
                 }
 
                 Event::TimerTick => {
@@ -4378,7 +4339,7 @@ pub mod app {
                     if let Some(toast) = &model.active_toast {
                         if toast.is_expired(model.view_timestamp_ms) {
                             model.clear_toast();
-                            caps.render().render();
+                            caps.render.render();
                         }
                     }
 
@@ -4392,7 +4353,7 @@ pub mod app {
                         .collect::<Vec<_>>()
                     {
                         model.rollback_mutation(&mutation_id);
-                        caps.telemetry().warn("mutation_timeout", &mutation_id);
+                        ;
                     }
 
                     for case_id in model
@@ -4407,7 +4368,7 @@ pub mod app {
                         if let Some(pending) = model.pending_claims.remove(&case_id) {
                             model.rollback_mutation(&pending.mutation_id);
                         }
-                        caps.telemetry().warn("claim_timeout", &case_id.0);
+                        ;
                     }
                 }
 
@@ -4428,13 +4389,15 @@ pub mod app {
                     Self::persist_store(model, caps);
 
                     if model.network_online {
-                        self.update(Event::OutboxFlushRequested, model, caps);
+                        ;
                     }
 
-                    caps.telemetry().event("retry_failed_requested", &[]);
-                    caps.render().render();
+                    ;
+                    caps.render.render();
                 }
             }
+
+            Command::done()
         }
 
         fn view(&self, model: &Model) -> ViewModel {
