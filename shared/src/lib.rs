@@ -692,6 +692,17 @@ pub fn zoom_for_radius(radius_m: u32) -> f64 {
         .unwrap_or(FALLBACK_ZOOM)
 }
 
+/// Convert a numeric wound severity (1–5) to the string label used in the UI and map pins.
+#[must_use]
+pub const fn severity_label(score: u8) -> &'static str {
+    match score {
+        1..=2 => "Low",
+        3 => "Moderate",
+        4 => "High",
+        _ => "Critical",
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum CaseStatus {
@@ -1777,6 +1788,8 @@ pub struct Model {
     pub view_timestamp_ms: u64,
     pub location_permission_state: PermissionState,
     pub camera_permission_state: PermissionState,
+    pub community_members: Vec<CommunityMember>,
+    pub is_loading_community: bool,
 }
 
 impl Default for Model {
@@ -1808,6 +1821,8 @@ impl Default for Model {
             view_timestamp_ms: get_current_time_ms(),
             location_permission_state: PermissionState::Unknown,
             camera_permission_state: PermissionState::Unknown,
+            community_members: Vec::new(),
+            is_loading_community: false,
         }
     }
 }
@@ -2080,6 +2095,25 @@ impl Default for ZoomLevel {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum CommunityMemberType {
+    Vet,
+    NGO,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct CommunityMember {
+    pub id: String,
+    pub name: String,
+    pub member_type: CommunityMemberType,
+    pub description: String,
+    pub location_name: String,
+    pub phone: String,
+    pub image_url: String,
+    pub lat: f64,
+    pub lon: f64,
+}
+
 #[derive(Debug, Clone)]
 pub enum Event {
     Noop,
@@ -2092,6 +2126,7 @@ pub enum Event {
     LoginCompleted {
         jwt: String,
         user_id: String,
+        user_type: String, // "individual" or "ngo"
     },
     LoginFailed {
         error: String,
@@ -2146,6 +2181,14 @@ pub enum Event {
         error: String,
     },
 
+    CommunityRequested,
+    CommunityLoaded {
+        members: Vec<CommunityMember>,
+    },
+    MessageMemberRequested {
+        member_id: String,
+    },
+
     CreateCaseRequested(CreateCasePayload),
     CreateCaseResponse {
         op_id: String,
@@ -2191,6 +2234,24 @@ pub enum Event {
     MapMoved {
         center: MapCenter,
         zoom: ZoomLevel,
+    },
+
+    // ── Native Map Bridge events ─────────────────────────────────────────────
+
+    /// Emitted by the shell when the native map view is ready to receive pins.
+    MapReady,
+
+    /// Emitted by the shell when the native map view is hidden / destroyed.
+    MapHidden,
+
+    /// The user tapped a case pin on the native map.
+    MapPinTapped {
+        case_id: String,
+    },
+
+    /// Result of any map operation (pins updated, camera moved, etc.).
+    MapOperationResult {
+        result: Box<Result<crate::capabilities::MapOutput, crate::capabilities::MapError>>,
     },
 
     CaseSelected {
@@ -2318,6 +2379,14 @@ impl Event {
             Self::ShowToast { .. } => "show_toast",
             Self::TimerTick => "timer_tick",
             Self::RetryFailedOperations => "retry_failed_operations",
+
+            Self::MapReady => "map_ready",
+            Self::MapHidden => "map_hidden",
+            Self::MapPinTapped { .. } => "map_pin_tapped",
+            Self::MapOperationResult { .. } => "map_operation_result",
+            Self::CommunityRequested => "community_requested",
+            Self::CommunityLoaded { .. } => "community_loaded",
+            Self::MessageMemberRequested { .. } => "message_member_requested",
         }
     }
 
@@ -2533,6 +2602,8 @@ pub struct ViewModel {
     pub offline_queue_count: usize,
     pub is_authenticated: bool,
     pub user_id: Option<String>,
+    pub community_members: Vec<CommunityMember>,
+    pub is_loading_community: bool,
 }
 
 pub mod app {
@@ -3599,12 +3670,11 @@ pub mod app {
                     caps.render.render();
                 }
 
-                Event::LoginCompleted { jwt, user_id } => {
+                Event::LoginCompleted { jwt, user_id, user_type: _ } => {
                     model.user_id = Some(UserId::new(&user_id));
                     model.jwt_token = Some(jwt);
                     model.state = AppState::OnboardingLocation;
-
-                    ;
+                    // TODO: Store or use user_type in model if needed
                     caps.render.render();
                 }
 
@@ -4109,11 +4179,27 @@ pub mod app {
 
                 Event::SwitchToMap => {
                     model.feed_view = FeedView::Map;
+                    // Request the native shell to render the map.
+                    let config = crate::capabilities::MapConfig::default()
+                        .with_center(
+                            model.map_center.map(|c| c.lat()).unwrap_or(0.0),
+                            model.map_center.map(|c| c.lon()).unwrap_or(0.0),
+                        )
+                        .with_zoom(model.map_zoom)
+                        .with_radius(model.area_radius_m)
+                        .validated();
+                    caps.map.show_map(config, |result| Event::MapOperationResult {
+                        result: Box::new(result),
+                    });
                     caps.render.render();
                 }
 
                 Event::SwitchToList => {
                     model.feed_view = FeedView::List;
+                    // Tear down the native map to avoid the view floating above the list.
+                    caps.map.hide_map(|result| Event::MapOperationResult {
+                        result: Box::new(result),
+                    });
                     caps.render.render();
                 }
 
@@ -4127,6 +4213,118 @@ pub mod app {
                         model.map_center = Some(coord);
                     }
                     model.map_zoom = zoom.value();
+                }
+
+                // ── Native Map Bridge event handlers ─────────────────────────
+
+                Event::MapReady => {
+                    // Map is rendered — push current pins immediately.
+                    let pins = model
+                        .cases
+                        .iter()
+                        .map(|c| {
+                            crate::capabilities::MapPin::new(
+                                c.id.as_str(),
+                                c.location.lat,
+                                c.location.lon,
+                                c.wound_severity
+                                    .map(|s| severity_label(s))
+                                    .unwrap_or("Unknown"),
+                                c.description
+                                    .as_deref()
+                                    .unwrap_or("Animal in distress"),
+                            )
+                            .with_subtitle(format!("{}", c.status))
+                        })
+                        .collect();
+                    caps.map.update_pins(pins, |result| Event::MapOperationResult {
+                        result: Box::new(result),
+                    });
+                }
+
+                Event::MapHidden => {
+                    // No model changes needed — render to sync UI state.
+                    caps.render.render();
+                }
+
+                Event::MapPinTapped { case_id } => {
+                    // Treat the same as the user selecting a case from the list.
+                    model.selected_case_id = Some(CaseId::new(&case_id));
+                    caps.render.render();
+                }
+
+                Event::MapOperationResult { .. } => {
+                    // Intentionally ignored for now — no model mutation required.
+                }
+
+                Event::CommunityRequested => {
+                    model.is_loading_community = true;
+                    // Mock data for now
+                    let members = vec![
+                        CommunityMember {
+                            id: "vet1".into(),
+                            name: "Paws & Claws Veterinary Clinic".into(),
+                            member_type: CommunityMemberType::Vet,
+                            description: "Excellence in small animal care with specialized surgical equipment and 24/7 emergency service.".into(),
+                            location_name: "Ramesh Nagar, Delhi".into(),
+                            phone: "+919876543210".into(),
+                            image_url: "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800&q=80".into(),
+                            lat: 28.6508,
+                            lon: 77.1352,
+                        },
+                        CommunityMember {
+                            id: "ngo1".into(),
+                            name: "Friendicoes SECA".into(),
+                            member_type: CommunityMemberType::NGO,
+                            description: "Oldest animal shelter in Delhi providing hospital care, outpatient clinic, and ambulance service for street animals.".into(),
+                            location_name: "Defence Colony, Delhi".into(),
+                            phone: "+911124320701".into(),
+                            image_url: "https://images.unsplash.com/photo-1602491673980-73aad856d8cc?w=800&q=80".into(),
+                            lat: 28.5724,
+                            lon: 77.2215,
+                        },
+                        CommunityMember {
+                            id: "vet2".into(),
+                            name: "The Pet Hospital".into(),
+                            member_type: CommunityMemberType::Vet,
+                            description: "Modern facility offering advanced diagnostics, grooming, and specialized orthopedic surgery.".into(),
+                            location_name: "Vasant Kunj, Delhi".into(),
+                            phone: "+919988776655".into(),
+                            image_url: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=800&q=80".into(),
+                            lat: 28.5293,
+                            lon: 77.1517,
+                        },
+                        CommunityMember {
+                            id: "ngo2".into(),
+                            name: "Wildlife SOS".into(),
+                            member_type: CommunityMemberType::NGO,
+                            description: "Dedicated to protecting and conserving India's rich biodiversity. Specialises in elephant and bear rescue.".into(),
+                            location_name: "South Ext, Delhi".into(),
+                            phone: "+919871963535".into(),
+                            image_url: "https://images.unsplash.com/photo-1606103920295-9a091573f160?w=800&q=80".into(),
+                            lat: 28.5714,
+                            lon: 77.2185,
+                        },
+                    ];
+                    
+                    caps.render.render();
+                    return Command::event(Event::CommunityLoaded { members });
+                }
+
+                Event::CommunityLoaded { members } => {
+                    model.community_members = members;
+                    model.is_loading_community = false;
+                    caps.render.render();
+                }
+
+                Event::MessageMemberRequested { member_id } => {
+                    if let Some(member) = model.community_members.iter().find(|m| m.id == member_id) {
+                        model.active_toast = Some(ToastMessage::new(
+                            format!("Texting {}...", member.name),
+                            ToastKind::Info,
+                        ));
+                        caps.render.render();
+                    }
                 }
 
                 Event::CaseSelected { case_id } => {
@@ -4610,6 +4808,8 @@ pub mod app {
                 offline_queue_count: model.offline_store.pending_sync_count(),
                 is_authenticated: model.is_authenticated(),
                 user_id: model.user_id.as_ref().map(|u| u.0.clone()),
+                community_members: model.community_members.clone(),
+                is_loading_community: model.is_loading_community,
             }
         }
     }

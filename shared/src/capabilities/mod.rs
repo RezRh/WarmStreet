@@ -1,5 +1,6 @@
 mod crypto;
 pub mod http;
+pub mod map;
 mod kv;
 mod location;
 mod outbox;
@@ -13,6 +14,7 @@ pub use self::crypto::{CryptoError, CryptoOperation, CryptoOutput, CryptoResult,
 pub use self::http::{HttpError, HttpOperation, HttpOutput, HttpResult};
 pub use self::kv::{KvError, KvOperation, KvOutput, KvResult};
 pub use self::location::{Location, LocationError, LocationOperation, LocationResult, PermissionState};
+pub use self::map::{Map, MapConfig, MapError, MapOperation, MapOutput, MapPin, MapResult};
 pub use self::push::{Push, PushError, PushOperation, PushOutput, PushResult};
 pub use self::telemetry::{Telemetry, TelemetryOperation};
 
@@ -36,6 +38,7 @@ pub type AppKv = KeyValue<Event>;
 pub type AppRender = Render<Event>;
 pub type AppCrypto = crypto::Crypto<Event>;
 pub type AppLocation = Location<Event>;
+pub type AppMap = Map<Event>;
 pub type AppPush = Push<Event>;
 pub type AppTelemetry = Telemetry<Event>;
 
@@ -55,6 +58,9 @@ pub enum CapabilityError {
 
     #[error("Location error: {0}")]
     Location(#[from] LocationError),
+
+    #[error("Map error: {0}")]
+    MapErr(#[from] MapError),
 
     #[error("Push error: {0}")]
     Push(#[from] PushError),
@@ -77,6 +83,7 @@ pub struct Capabilities {
     pub render: crux_core::render::Render<Event>,
     pub crypto: crypto::Crypto<Event>,
     pub location: location::Location<Event>,
+    pub map: map::Map<Event>,
     pub push: push::Push<Event>,
     pub telemetry: telemetry::Telemetry<Event>,
 
@@ -86,8 +93,20 @@ pub struct Capabilities {
 
 // Stub Default implementation for initial development
 // TODO: Implement proper mock capabilities with CapabilityContext
+// Stub Default implementation for initial development
 impl Default for Capabilities {
     fn default() -> Self {
-        unimplemented!("Provide real Capabilities implementation")
+        Self {
+            http: crux_http::Http::new(todo!()),
+            kv: crux_kv::KeyValue::new(todo!()),
+            render: crux_core::render::Render::new(todo!()),
+            crypto: crypto::Crypto::new(todo!()),
+            location: location::Location::new(todo!()),
+            map: map::Map::new(todo!()),
+            push: push::Push::new(todo!()),
+            telemetry: telemetry::Telemetry::new(todo!()),
+            #[cfg(feature = "camera")]
+            camera: camera::Camera::new(todo!()),
+        }
     }
 }

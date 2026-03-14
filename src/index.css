@@ -2,6 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "tw-animate-css";
+
+@keyframes fadeSlideIn {
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px);
+  }
+}
+
+@keyframes slideRightIn {
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateX(0px);
+  }
+}
+
+@keyframes testimonialIn {
+  to {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px) scale(1);
+  }
+}
+
+.animate-element {
+  animation: fadeSlideIn 0.6s ease-out forwards;
+  opacity: 0;
+  filter: blur(4px);
+  transform: translateY(12px);
+}
+
+.animate-slide-right {
+  animation: slideRightIn 0.8s ease-out forwards;
+  opacity: 0;
+  filter: blur(4px);
+  transform: translateX(24px);
+}
+
+.animate-testimonial {
+  animation: testimonialIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+  filter: blur(8px);
+  transform: translateY(24px) scale(0.95);
+}
+
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+.animate-delay-600 { animation-delay: 600ms; }
+.animate-delay-700 { animation-delay: 700ms; }
+.animate-delay-800 { animation-delay: 800ms; }
+.animate-delay-900 { animation-delay: 900ms; }
+.animate-delay-1000 { animation-delay: 1000ms; }
+.animate-delay-1200 { animation-delay: 1200ms; }
+.animate-delay-1400 { animation-delay: 1400ms; }
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -19,11 +79,6 @@
 
 body {
   margin: 0;
-  /* Safe area insets for notched devices */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
   display: flex;
   min-width: 320px;
   min-height: 100vh;
@@ -45,4 +100,82 @@ input,
 select,
 textarea {
   touch-action: manipulation;
+}
+/* Liquid Glass Nav Styles */
+:root {
+  --c: #fff;
+  --bg: #0d0d0d;
+}
+
+@keyframes scaleToggle {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.1, 0.9); }
+}
+
+@keyframes scaleToggle2 {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.05, 0.95); }
+}
+
+@keyframes scaleToggle3 {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.15, 0.85); }
+}
+
+
+.liquid-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1.5rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #666;
+}
+
+.liquid-item.active {
+  background: #262626;
+  color: #f97316;
+  animation: scaleToggle 0.5s ease-in-out;
+}
+
+.liquid-item:not(.active):hover {
+  color: #999;
+}
+
+.liquid-nav-container {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 50;
+}
+
+.liquid-search-btn {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 100%;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: transform 0.2s;
+  filter: url(#toggler);
+}
+
+.liquid-search-btn:active {
+  transform: scale(0.9);
+}
+
+.switcher__icon {
+  width: 1.5rem;
+  height: 1.5rem;
 }

@@ -1,0 +1,21 @@
+[package]
+name = "tauri-plugin-nativemap"
+version = "0.1.0"
+edition = "2021"
+description = "Native map plugin for WarmStreet — Apple Maps on iOS, Google Maps SDK on Android"
+authors = ["Antigravity"]
+publish = false
+
+[lib]
+name = "tauri_plugin_nativemap"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = [] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tracing = "0.1"

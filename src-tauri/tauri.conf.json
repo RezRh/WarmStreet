@@ -57,6 +57,9 @@
     },
     "camera": {
       "enabled": true
+    },
+    "nativemap": {
+      "enabled": true
     }
   }
 }

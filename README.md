@@ -26,14 +26,13 @@ Zero lost reports. Zero volunteer collisions. Zero privacy leaks. Zero infrastru
 └────────────────────────┬────────────────────────────────┘
                          │ HTTPS (H2/H3)
 ┌────────────────────────▼────────────────────────────────┐
-│  Cloudflare Workers (Edge, 300+ PoPs)                   │
-│  Auth • RLS • Idempotency • Atomic claim • Push • Cron  │
+│  Appwrite Cloud (BaaS)                                  │
+│  Auth • Database • Storage • Functions • Messaging      │
 └────────┬──────────┬──────────┬──────────┬───────────────┘
          │          │          │          │
     ┌────▼───┐ ┌───▼────┐ ┌──▼───┐ ┌───▼────┐
-    │  Neon  │ │ Tigris │ │ FCM  │ │ Gemini │
-    │Postgres│ │Private │ │ Push │ │ Flash  │
-    │+PostGIS│ │Storage │ │      │ │        │
+    │Appwrite│ │Appwrite│ │Appwrite│ │ Gemini │
+    │ Auth   │ │Database│ │Storage │ │ Flash  │
     └────────┘ └────────┘ └──────┘ └────────┘
 ```
 
@@ -43,9 +42,9 @@ Zero lost reports. Zero volunteer collisions. Zero privacy leaks. Zero infrastru
 
 | Legacy Apps Fail Because…          | WarmStreet Solves It At The Root                              |
 |------------------------------------|----------------------------------------------------------------|
-| Multiple volunteers rush → waste   | **Atomic claim in Postgres** — exactly one wins, instantly     |
+| Multiple volunteers rush → waste   | **Appwrite Realtime + Atomic Updates** — exactly one wins, instantly     |
 | Network drops → report lost        | **SQLite outbox + idempotency** — 100% delivery, zero duplicates |
-| Photos leak location & identity    | **Private Tigris + signed URLs + EXIF stripped** — no public links ever |
+| Photos leak location & identity    | **Appwrite Storage + Signed URLs + EXIF stripped** — no public links ever |
 | Storage & bandwidth costs explode  | **Auto-delete on resolution + daily sweep** → costs → 0       |
 | Slow, janky, server-dependent UI   | **SolidJS + Rust core + edge API** → sub-second everything    |
 
@@ -57,7 +56,7 @@ Zero lost reports. Zero volunteer collisions. Zero privacy leaks. Zero infrastru
 - **Exactly-once semantics** — retries are safe forever.
 - **Sub-2-second push** — volunteer claims → every other notified phone mutes in <2s.
 - **Privacy by default** — no image is ever public, no EXIF ever leaves the device.
-- **Zero race conditions** — coordination happens in a single Postgres function, not fragile app code.
+- **Zero race conditions** — coordination happens in the cloud state, not fragile app code.
 
 ---
 
@@ -70,13 +69,13 @@ Zero lost reports. Zero volunteer collisions. Zero privacy leaks. Zero infrastru
 | Frontend            | SolidJS + Vite                       | Fastest runtime, fine-grained signals, zero VDOM |
 | Styling             | Tailwind CSS                         | Utility-first, consistent design              |
 | Local DB & Outbox   | SQLite                               | Rock-solid, zero-loss queue                   |
-| Auth                | Neon Auth (Better Auth)              | Branchable previews, zero maintenance         |
-| Database            | Neon Postgres + PostGIS              | Atomic coordination, geo queries, RLS         |
-| Storage             | Tigris (private S3)                  | Signed URLs, free tier, self-cleaning         |
-| Push                | FCM / APNs                           | Unlimited, reliable                           |
+| Auth                | Appwrite Auth                        | Managed OIDC, OAuth2, Email/Pass, Session    |
+| Database            | Appwrite Databases                   | JSON-like documents, atomic attribute upd    |
+| Storage             | Appwrite Storage                     | Built-in security, buckets, file permissions |
+| Push                | Appwrite Messaging                   | Native push, SMS, Email                      |
 | On-device Vision    | YOLOv8 ONNX                          | <100ms wound detection                        |
 | Cloud Vision        | Gemini Flash                         | Cheap, fast, structured triage                |
-| Backend             | Cloudflare Workers + Hono            | Runs everywhere, no servers, free until scale |
+| Backend             | Appwrite Functions                   | Runs everywhere, serverless, scale instantly |
 
 ---
 
@@ -153,17 +152,11 @@ Only the wound ever leaves the phone.
 warmstreet/
 ├── src/                    # SolidJS + TypeScript frontend
 │   ├── App.tsx
-│   ├── index.tsx
-│   ├── index.css
-│   └── components/
+│   ├── lib/
+│   │   └── appwrite.ts     # Appwrite client initialization
+│   ├── components/
 ├── src-tauri/              # Tauri v2 Rust backend
-│   ├── src/
-│   ├── capabilities/
-│   ├── Cargo.toml
-│   └── tauri.conf.json
 ├── shared/                 # Rust Crux shared brain
-├── worker/                 # Cloudflare Worker API + cron
-├── migrations/             # Postgres + PostGIS + atomic functions
 └── docs/blueprint/         # Full technical deep-dive
 ```
 
