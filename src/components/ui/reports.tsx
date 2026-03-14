@@ -39,11 +39,11 @@ export const ReportsPage = (props: ReportsPageProps) => {
   const severityOptions = ['All', 'Critical', 'High', 'Moderate', 'Low'];
 
   return (
-    <div class="flex flex-col h-full space-y-6 pt-4">
+    <div class="flex flex-col w-full space-y-6 pt-4 overflow-x-hidden">
       {/* Search and Title Row */}
       <div class="relative min-h-[80px]">
         <Show when={!isSearchOpen()}>
-          <div class="flex justify-between items-end animate-in fade-in slide-in-from-left-4 duration-300">
+          <div class="flex justify-between items-end">
             <div>
               <h1 class="text-4xl font-black tracking-tight text-white mb-1">Reports</h1>
               <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest">
@@ -60,7 +60,7 @@ export const ReportsPage = (props: ReportsPageProps) => {
         </Show>
 
         <Show when={isSearchOpen()}>
-          <div class="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div class="flex items-center gap-3">
             <div class="flex-1 relative">
               <div class="absolute left-4 top-1/2 -translate-y-1/2">
                 <Search class="w-4 h-4 text-zinc-500" />

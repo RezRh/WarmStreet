@@ -60,6 +60,17 @@ fn string_to_event(event: &str, payload: Option<&JsonValue>) -> Event {
                 .to_string();
             Event::MapPinTapped { case_id: id }
         }
+        "CommunityRequested" => Event::CommunityRequested,
+        "MessageMemberRequested" => {
+            let id = payload
+                .and_then(|p| p.get("member_id"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            Event::MessageMemberRequested { member_id: id }
+        }
+        "ChatClosed" => Event::ChatClosed,
+        "CaseDeselected" => Event::CaseDeselected,
         _ => Event::Noop,
     }
 }

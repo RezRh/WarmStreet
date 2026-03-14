@@ -5,6 +5,7 @@ import { listen } from '@tauri-apps/api/event';
 import { LiquidNav } from './liquid-nav';
 import { ReportsPage } from './reports';
 import { CommunityPage } from './community-page';
+import { ChatInterface } from './chat';
 
 interface Case {
   id: string;
@@ -22,10 +23,13 @@ interface HomePageProps {
   cases: Case[];
   communityMembers: any[];
   isLoadingCommunity: boolean;
+  activeChatMember: any | null;
   onReport: () => void;
   onRefresh: () => void;
   onCaseSelect: (id: string) => void;
   onMessageMember: (id: string) => void;
+  onCloseChat: () => void;
+  onSendMessage: (text: string) => void;
   onSignOut: () => void;
 }
 
@@ -101,9 +105,9 @@ export const HomePage = (props: HomePageProps) => {
       </Show>
 
       {/* Scrollable Content */}
-      <main class="flex-1 overflow-y-auto px-6 pb-32 custom-scrollbar">
+      <main class="flex-1 overflow-y-auto custom-scrollbar">
         <Show when={activeTab() === 'home'}>
-          <div class="space-y-6 pt-2">
+          <div class="space-y-6 pt-2 px-6 pb-32">
             {/* Live Rescue Map Card */}
             <section class="bg-zinc-900/40 border border-white/5 rounded-[2rem] p-6 space-y-4 backdrop-blur-xl">
               <div class="flex justify-between items-center">
@@ -208,8 +212,12 @@ export const HomePage = (props: HomePageProps) => {
                           {item.type} • {item.age} • {item.breed}
                         </p>
                         <div class="flex items-center gap-1.5 pt-2">
-                          <div class={`px-3 py-1.5 rounded-xl text-[10px] font-bold ${
-                            item.status === 'IN PROGRESS' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          <div class={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider ${
+                            item.status === 'pending' ? 'bg-zinc-500/10 text-zinc-400 border border-white/10' :
+                            item.status === 'claimed' || item.status === 'arrived' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                            item.status === 'en_route' ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20' :
+                            item.status === 'resolved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            'bg-zinc-500/10 text-zinc-400 border border-white/10'
                           }`}>
                             {item.status.replace('_', ' ')}
                           </div>
@@ -228,7 +236,7 @@ export const HomePage = (props: HomePageProps) => {
         </Show>
 
         <Show when={activeTab() === 'reports'}>
-          <div class="pt-14">
+          <div class="px-6 pt-14 pb-32">
             <ReportsPage cases={props.cases as any} onCaseSelect={props.onCaseSelect} />
           </div>
         </Show>
@@ -251,15 +259,21 @@ export const HomePage = (props: HomePageProps) => {
         </Show>
       </main>
 
+      {/* Chat Interface Overlay */}
+      <Show when={props.activeChatMember}>
+        <ChatInterface 
+          member={props.activeChatMember} 
+          onClose={props.onCloseChat}
+          onSendMessage={props.onSendMessage}
+        />
+      </Show>
+
       {/* Liquid Glass Navigation */}
       <LiquidNav 
         activeTab={activeTab()} 
         onTabChange={(tab) => setActiveTab(tab)} 
         onReport={props.onReport}
       />
-
-      {/* Bottom spacer for safe area */}
-      <div class="h-8 w-full" />
     </div>
   );
 };

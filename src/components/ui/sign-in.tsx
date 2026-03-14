@@ -1,5 +1,5 @@
 import { createSignal, Show } from 'solid-js';
-import { Eye, EyeOff, Building2, User, Stethoscope } from 'lucide-solid';
+import { Eye, EyeOff } from 'lucide-solid';
 
 // --- HELPER COMPONENTS (ICONS) ---
 
@@ -106,7 +106,6 @@ export const SignInPage = (props: SignInPageProps) => {
                   onClick={() => setUserType('individual')}
                   class={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${userType() === 'individual' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                  <User class="w-4 h-4" />
                   <span class="text-[10px] font-bold uppercase tracking-wider">Individual</span>
                 </button>
                 <button 
@@ -114,7 +113,6 @@ export const SignInPage = (props: SignInPageProps) => {
                   onClick={() => setUserType('ngo')}
                   class={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${userType() === 'ngo' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                  <Building2 class="w-4 h-4" />
                   <span class="text-[10px] font-bold uppercase tracking-wider">NGO</span>
                 </button>
                 <button 
@@ -122,7 +120,6 @@ export const SignInPage = (props: SignInPageProps) => {
                   onClick={() => setUserType('vet')}
                   class={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-all ${userType() === 'vet' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                  <Stethoscope class="w-4 h-4" />
                   <span class="text-[10px] font-bold uppercase tracking-wider">Vet</span>
                 </button>
               </div>
