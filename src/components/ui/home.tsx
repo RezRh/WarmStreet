@@ -6,6 +6,7 @@ import { LiquidNav } from './liquid-nav';
 import { ReportsPage } from './reports';
 import { CommunityPage } from './community-page';
 import { ChatInterface } from './chat';
+import { ProfilePage } from './profile';
 
 interface Case {
   id: string;
@@ -252,7 +253,13 @@ export const HomePage = (props: HomePageProps) => {
           </div>
         </Show>
 
-        <Show when={activeTab() !== 'home' && activeTab() !== 'reports' && activeTab() !== 'community'}>
+        <Show when={activeTab() === 'profile'}>
+          <div class="h-full">
+            <ProfilePage onSignOut={props.onSignOut} />
+          </div>
+        </Show>
+
+        <Show when={activeTab() !== 'home' && activeTab() !== 'reports' && activeTab() !== 'community' && activeTab() !== 'profile'}>
           <div class="flex items-center justify-center h-full text-zinc-500">
             Tab: {activeTab()} (Coming Soon)
           </div>
