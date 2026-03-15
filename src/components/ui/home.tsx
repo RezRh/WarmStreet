@@ -1,5 +1,5 @@
 import { createSignal, For, Show, createEffect, onMount, onCleanup } from 'solid-js';
-import { Bell, MapPin, RefreshCcw, Search } from 'lucide-solid';
+import { Bell, MapPin, RefreshCcw } from 'lucide-solid';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { LiquidNav } from './liquid-nav';
@@ -32,6 +32,8 @@ interface HomePageProps {
   onCloseChat: () => void;
   onSendMessage: (text: string) => void;
   onSignOut: () => void;
+  user: any;
+  profile?: any;
 }
 
 export const HomePage = (props: HomePageProps) => {
@@ -83,24 +85,17 @@ export const HomePage = (props: HomePageProps) => {
             <div class="flex flex-col">
               <h1 class="text-3xl font-bold tracking-tight text-white">WarmStreet</h1>
             </div>
-          <div class="flex items-center gap-2">
-            <div class="flex items-center p-1 bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-full">
-              <button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/5 transition-all active:scale-95">
-                <Search class="w-5 h-5 text-white/70" />
-              </button>
-            </div>
-            <div class="flex items-center p-1.5 bg-white/[0.05] backdrop-blur-[30px] saturate-[180%] border border-white/10 rounded-full shadow-lg relative overflow-hidden group">
+            <div class="flex items-center p-1 bg-white/[0.05] backdrop-blur-[30px] saturate-[180%] border border-white/10 rounded-full shadow-lg relative overflow-hidden group">
               <div class="absolute inset-0 bg-white/5 pointer-events-none" style="filter: url(#liquid-filter)" />
-              <button class="w-11 h-11 rounded-full flex items-center justify-center relative hover:bg-white/5 transition-all active:scale-95 z-10">
-                <Bell class="w-5 h-5 text-white/90" />
-                <span class="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center border-2 border-zinc-950 shadow-sm animate-pulse">8</span>
+              <button class="w-9 h-9 rounded-full flex items-center justify-center relative hover:bg-white/5 transition-all active:scale-90 z-10">
+                <Bell class="w-4 h-4 text-white/90" />
+                <span class="absolute top-1 right-1 w-3.5 h-3.5 bg-red-500 rounded-full text-[8px] font-bold flex items-center justify-center border-2 border-zinc-950 shadow-sm animate-pulse">8</span>
               </button>
             </div>
           </div>
-          </div>
-          <div class="flex items-center gap-2 text-zinc-400 mt-2">
-            <MapPin class="w-4 h-4 text-zinc-500" />
-            <span class="text-xs font-medium">Shop No 8 ramesh nagar gol cha...</span>
+          <div class="flex items-center gap-2 text-zinc-400 mt-2 pl-1">
+            <MapPin class="w-3.5 h-3.5 text-zinc-500" />
+            <span class="text-[11px] font-bold uppercase tracking-wider opacity-60">Ramesh Nagar, Delhi</span>
           </div>
         </header>
       </Show>
@@ -255,7 +250,11 @@ export const HomePage = (props: HomePageProps) => {
 
         <Show when={activeTab() === 'profile'}>
           <div class="h-full">
-            <ProfilePage onSignOut={props.onSignOut} />
+            <ProfilePage 
+              user={props.user} 
+              profile={props.profile}
+              onSignOut={props.onSignOut} 
+            />
           </div>
         </Show>
 

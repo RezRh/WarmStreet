@@ -12,68 +12,80 @@ import {
   Zap,
   Star
 } from 'lucide-solid';
-import { account } from '../../lib/appwrite';
+// import { account } from '../../lib/appwrite';
 import { SettingsModal } from './settings';
 
 interface ProfilePageProps {
+  user: any;
+  profile?: {
+    name: string;
+    email: string;
+    phone: string | null;
+    member_type: 'Individual' | 'NGO' | 'Vet';
+    karma: number;
+    rescues: number;
+    verification_level: string;
+  };
   onSignOut: () => void;
 }
 
 export const ProfilePage = (props: ProfilePageProps) => {
-  const [user, setUser] = createSignal<any>(null);
-  const [loading, setLoading] = createSignal(true);
+  const [ready, setReady] = createSignal(false);
   const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
 
-  onMount(async () => {
-    try {
-      const currentUser = await account.get();
-      setUser(currentUser);
-    } catch (err) {
-      console.log('ℹ️ No Appwrite session, assuming guest mode');
-      // Mock guest user data for design preview
-      setUser({
-        name: 'Rezwanur Rahman',
-        email: 'rezwan@warmstreet.org',
-        prefs: {
-          user_type: 'vet',
-          phone: '+91 98765 43210'
-        }
-      });
-    } finally {
-      setTimeout(() => setLoading(false), 800); // Smooth transition
-    }
+  onMount(() => {
+    // Artificial 1-second "hydration" for a premium reveal feel
+    setTimeout(() => setReady(true), 1000);
   });
 
+  const userData = () => {
+    if (props.profile) {
+      return {
+        name: props.profile.name,
+        email: props.profile.email,
+        prefs: {
+          user_type: props.profile.member_type.toLowerCase(),
+          phone: props.profile.phone,
+          karma: props.profile.karma,
+          rescues: props.profile.rescues,
+          verification_level: props.profile.verification_level
+        }
+      };
+    }
+    
+    return props.user || {
+      name: '',
+      email: '',
+      prefs: {
+        user_type: '',
+        phone: ''
+      }
+    };
+  };
+
   const getUserTypeLabel = () => {
-    const type = user()?.prefs?.user_type;
+    const type = userData()?.prefs?.user_type;
     if (type === 'individual') return 'Elite Volunteer';
     if (type === 'ngo') return 'Authorized NGO';
     if (type === 'vet') return 'Certified Veterinarian';
+    if (type === '') return 'Initializing...';
     return 'Community Member';
   };
 
   const getUserTypeColor = () => {
-    const type = user()?.prefs?.user_type;
+    const type = userData()?.prefs?.user_type;
+    if (!userData()?.name || !type) return 'from-zinc-800 to-zinc-900'; // Neutral loading
     if (type === 'ngo') return 'from-indigo-500 via-purple-500 to-pink-500';
     if (type === 'vet') return 'from-cyan-500 via-blue-600 to-indigo-600';
-    return 'from-emerald-400 via-teal-500 to-cyan-600';
+    if (type === 'individual') return 'from-emerald-400 via-teal-500 to-cyan-600';
+    return 'from-white/5 to-transparent'; // Neutral fallback
   };
 
   return (
     <div class="flex flex-col h-full bg-zinc-950 text-white font-sans overflow-hidden selection:bg-white/10">
-      <Show when={loading()}>
-        <div class="absolute inset-0 z-[100] flex items-center justify-center bg-zinc-950">
-          <div class="relative w-24 h-24">
-            <div class={`absolute inset-0 rounded-full border-4 border-white/5 border-t-white/40 animate-spin`} />
-            <div class="absolute inset-4 rounded-full bg-white/5 backdrop-blur-xl flex items-center justify-center">
-              <Zap class="w-6 h-6 text-white animate-pulse" />
-            </div>
-          </div>
-        </div>
-      </Show>
 
       {/* Dynamic Background Glow */}
-      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[50%] pointer-events-none opacity-20">
+      <div class={`absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[50%] pointer-events-none transition-all duration-1000 ${ready() ? 'opacity-20' : 'opacity-0'}`}>
         <div class={`absolute inset-0 bg-gradient-to-b ${getUserTypeColor()} blur-[120px] rounded-full`} />
       </div>
 
@@ -87,7 +99,7 @@ export const ProfilePage = (props: ProfilePageProps) => {
       <div class="flex-1 overflow-y-auto px-6 pt-16 pb-40 no-scrollbar relative z-10 space-y-8">
         
         {/* Profile Header Block */}
-        <section class="flex flex-col items-center text-center space-y-6">
+        <section class={`flex flex-col items-center text-center space-y-6 transition-all duration-1000 ${ready() ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div class="relative group">
             {/* Liquid-style Halo */}
             <div class={`absolute -inset-4 bg-gradient-to-tr ${getUserTypeColor()} opacity-25 blur-2xl group-hover:opacity-40 transition-opacity duration-700 animate-pulse`} />
@@ -95,9 +107,9 @@ export const ProfilePage = (props: ProfilePageProps) => {
             <div class="relative">
               <div class={`p-[3px] rounded-[2.5rem] bg-gradient-to-tr ${getUserTypeColor()} shadow-2xl`}>
                 <div class="w-28 h-28 rounded-[2.4rem] bg-zinc-950 flex items-center justify-center overflow-hidden border border-white/10">
-                  <Show when={user()?.name} fallback={<User class="w-12 h-12 text-zinc-800" />}>
+                  <Show when={userData()?.name} fallback={<User class="w-12 h-12 text-zinc-800" />}>
                     <span class="text-4xl font-black bg-gradient-to-br from-white to-white/30 bg-clip-text text-transparent select-none tracking-tighter">
-                      {user()?.name?.substring(0, 1).toUpperCase()}
+                      {userData()?.name?.substring(0, 1).toUpperCase()}
                     </span>
                   </Show>
                 </div>
@@ -109,7 +121,7 @@ export const ProfilePage = (props: ProfilePageProps) => {
           </div>
 
           <div class="space-y-2">
-            <h1 class="text-3xl font-black tracking-tight text-white">{user()?.name || 'User'}</h1>
+            <h1 class="text-3xl font-black tracking-tight text-white">{userData()?.name || 'User'}</h1>
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-xl">
               <div class={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${getUserTypeColor()} shadow-[0_0_10px_rgba(255,255,255,0.3)] animate-pulse`} />
               <span class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">{getUserTypeLabel()}</span>
@@ -118,16 +130,16 @@ export const ProfilePage = (props: ProfilePageProps) => {
         </section>
 
         {/* Stats Bento Grid */}
-        <section class="grid grid-cols-2 gap-4">
+        <section class={`grid grid-cols-2 gap-4 transition-all duration-1000 delay-300 ${ready() ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div class="bg-white/[0.03] border border-white/10 rounded-[2rem] p-5 space-y-1 backdrop-blur-3xl hover:bg-white/[0.05] transition-all group">
             <div class="flex justify-between items-start">
               <div class="p-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20">
                 <Activity class="w-4 h-4 text-violet-400" />
               </div>
-              <span class="text-[10px] font-bold text-emerald-400">+12%</span>
+              <span class="text-[10px] font-bold text-emerald-400">+{userData()?.prefs?.rescues || 0}%</span>
             </div>
             <div class="pt-2">
-              <div class="text-2xl font-black group-hover:scale-105 transition-transform origin-left">142</div>
+              <div class="text-2xl font-black group-hover:scale-105 transition-transform origin-left">{userData()?.prefs?.karma || 0}</div>
               <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Global Rescue Karma</div>
             </div>
           </div>
@@ -137,17 +149,17 @@ export const ProfilePage = (props: ProfilePageProps) => {
               <div class="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
                 <Shield class="w-4 h-4 text-blue-400" />
               </div>
-              <span class="text-[10px] font-bold text-blue-400">SR 1</span>
+              <span class="text-[10px] font-bold text-blue-400">Tier 1</span>
             </div>
             <div class="pt-2">
-              <div class="text-2xl font-black group-hover:scale-105 transition-transform origin-left">Elite</div>
+              <div class="text-2xl font-black group-hover:scale-105 transition-transform origin-left">{userData()?.prefs?.verification_level || 'Bronze'}</div>
               <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Verification Level</div>
             </div>
           </div>
         </section>
 
         {/* Activity Heatmap - Bespoke Element */}
-        <section class="space-y-4">
+        <section class={`space-y-4 transition-all duration-1000 delay-500 ${ready() ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
           <div class="flex items-center justify-between px-2">
             <h3 class="text-[11px] font-black text-zinc-600 uppercase tracking-[0.3em]">Rescue Frequency</h3>
             <div class="flex gap-1">
@@ -181,7 +193,7 @@ export const ProfilePage = (props: ProfilePageProps) => {
         </section>
 
         {/* Interaction List */}
-        <section class="space-y-4">
+        <section class={`space-y-4 transition-all duration-1000 delay-700 ${ready() ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}>
           <div class="flex items-center justify-between px-2">
             <h3 class="text-[11px] font-black text-zinc-600 uppercase tracking-[0.3em]">Security & Identity</h3>
             <Fingerprint class="w-4 h-4 text-zinc-800" />
@@ -194,7 +206,7 @@ export const ProfilePage = (props: ProfilePageProps) => {
               </div>
               <div class="flex-1">
                 <div class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-0.5">Primary Corridor</div>
-                <div class="text-sm font-bold text-zinc-200">{user()?.email || 'N/A'}</div>
+                <div class="text-sm font-bold text-zinc-200">{userData()?.email || 'N/A'}</div>
               </div>
               <ChevronRight class="w-5 h-5 text-zinc-800 group-hover:text-white group-hover:translate-x-1 transition-all" />
             </div>
@@ -205,7 +217,7 @@ export const ProfilePage = (props: ProfilePageProps) => {
               </div>
               <div class="flex-1">
                 <div class="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-0.5">Secure Contact</div>
-                <div class="text-sm font-bold text-zinc-200">{user()?.prefs?.phone || '+91 0000 0000'}</div>
+                <div class="text-sm font-bold text-zinc-200">{userData()?.prefs?.phone || '+91 0000 0000'}</div>
               </div>
               <ChevronRight class="w-5 h-5 text-zinc-800 group-hover:text-white group-hover:translate-x-1 transition-all" />
             </div>

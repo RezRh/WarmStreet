@@ -1,4 +1,4 @@
-use shared::{App, CruxApp, Event, Model};
+use shared::{App, CruxApp, Event, Model, UserProfile};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State, Listener};
 use tauri_plugin_nativemap;
@@ -71,6 +71,35 @@ fn string_to_event(event: &str, payload: Option<&JsonValue>) -> Event {
         }
         "ChatClosed" => Event::ChatClosed,
         "CaseDeselected" => Event::CaseDeselected,
+        "ProfileUpdated" => {
+            if let Some(p) = payload {
+                match serde_json::from_value(p.clone()) {
+                    Ok(profile) => Event::ProfileUpdated(profile),
+                    Err(e) => {
+                        tracing::error!("❌ Failed to deserialize profile: {}", e);
+                        Event::Noop
+                    }
+                }
+            } else {
+                Event::Noop
+            }
+        }
+        "MfaRequired" => {
+            let challenge_id = payload
+                .and_then(|p| p.get("challenge_id"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            Event::MfaRequired { challenge_id }
+        }
+        "MfaVerifyRequested" => {
+            let code = payload
+                .and_then(|p| p.get("code"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            Event::MfaVerifyRequested { code }
+        }
         _ => Event::Noop,
     }
 }

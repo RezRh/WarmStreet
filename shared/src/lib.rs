@@ -1050,6 +1050,7 @@ pub enum AppState {
     OnboardingRadius,
     CameraCapture,
     Ready,
+    MfaVerification,
     Error,
 }
 
@@ -1791,6 +1792,7 @@ pub struct Model {
     pub community_members: Vec<CommunityMember>,
     pub is_loading_community: bool,
     pub active_chat_member_id: Option<String>,
+    pub profile: Option<UserProfile>,
 }
 
 impl Default for Model {
@@ -1804,263 +1806,7 @@ impl Default for Model {
             map_center: None,
             map_zoom: DEFAULT_MAP_ZOOM,
             feed_view: FeedView::default(),
-            cases: vec![
-                ServerCase {
-                    id: CaseId::new("case-1"),
-                    location: LatLon { lat: 28.6508, lon: 77.1352 },
-                    description: Some("Injured stray dog near Metro Station".into()),
-                    landmark_hint: Some("Near Pillar 402".into()),
-                    wound_severity: Some(85),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710400000000),
-                    updated_at_ms_utc: UnixTimeMs(1710400000000),
-                    reporter_id: UserId::new("user-1"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1541233349642-6e425fe6190e?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Deep laceration on left hind leg".into()),
-                    species_guess: Some("Dog".into()),
-                    distance_meters: Some(450.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-2"),
-                    location: LatLon { lat: 28.5724, lon: 77.2215 },
-                    description: Some("Kitten trapped in drainage pipe".into()),
-                    landmark_hint: None,
-                    wound_severity: Some(40),
-                    status: CaseStatus::Claimed,
-                    created_at_ms_utc: UnixTimeMs(1710410000000),
-                    updated_at_ms_utc: UnixTimeMs(1710410000000),
-                    reporter_id: UserId::new("user-2"),
-                    assigned_rescuer_id: Some(UserId::new("rescuer-1")),
-                    photo_url: Some("https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: None,
-                    species_guess: Some("Cat".into()),
-                    distance_meters: Some(1200.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-3"),
-                    location: LatLon { lat: 28.5293, lon: 77.1517 },
-                    description: Some("Cow with leg injury blocking traffic".into()),
-                    landmark_hint: Some("Near main signal".into()),
-                    wound_severity: Some(95),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710420000000),
-                    updated_at_ms_utc: UnixTimeMs(1710420000000),
-                    reporter_id: UserId::new("user-3"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1545468835-3e3bcfc009d7?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Suspected fracture, high urgency".into()),
-                    species_guess: Some("Cow".into()),
-                    distance_meters: Some(2100.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-4"),
-                    location: LatLon { lat: 28.6328, lon: 77.2197 },
-                    description: Some("Lame pigeon found in park".into()),
-                    landmark_hint: Some("Central Park bench side".into()),
-                    wound_severity: Some(20),
-                    status: CaseStatus::EnRoute,
-                    created_at_ms_utc: UnixTimeMs(1710430000000),
-                    updated_at_ms_utc: UnixTimeMs(1710430000000),
-                    reporter_id: UserId::new("user-4"),
-                    assigned_rescuer_id: Some(UserId::new("rescuer-2")),
-                    photo_url: Some("https://images.unsplash.com/photo-1522271815150-1364d50c7662?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: None,
-                    species_guess: Some("Bird".into()),
-                    distance_meters: Some(800.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-5"),
-                    location: LatLon { lat: 28.4595, lon: 77.0266 }, // Gurgaon
-                    description: Some("Monkey with skin infection".into()),
-                    landmark_hint: Some("Sector 45 residential area".into()),
-                    wound_severity: Some(60),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710440000000),
-                    updated_at_ms_utc: UnixTimeMs(1710440000000),
-                    reporter_id: UserId::new("user-5"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Possible mange or parasitic infection".into()),
-                    species_guess: Some("Monkey".into()),
-                    distance_meters: Some(15400.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-6"),
-                    location: LatLon { lat: 28.5355, lon: 77.3910 }, // Noida
-                    description: Some("Dog hit by car - emergency".into()),
-                    landmark_hint: Some("Opposite Sector 62 bus stop".into()),
-                    wound_severity: Some(100),
-                    status: CaseStatus::Arrived,
-                    created_at_ms_utc: UnixTimeMs(1710450000000),
-                    updated_at_ms_utc: UnixTimeMs(1710450000000),
-                    reporter_id: UserId::new("user-6"),
-                    assigned_rescuer_id: Some(UserId::new("rescuer-3")),
-                    photo_url: Some("https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Critical trauma, internal bleeding suspected".into()),
-                    species_guess: Some("Dog".into()),
-                    distance_meters: Some(18200.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-7"),
-                    location: LatLon { lat: 28.5244, lon: 77.1855 }, // Mehrauli
-                    description: Some("Dehydrated puppies in construction site".into()),
-                    landmark_hint: Some("Behind Qutub Minar complex".into()),
-                    wound_severity: Some(30),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710460000000),
-                    updated_at_ms_utc: UnixTimeMs(1710460000000),
-                    reporter_id: UserId::new("user-7"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1591160690555-5debfba289f0?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: None,
-                    species_guess: Some("Dog".into()),
-                    distance_meters: Some(3500.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-8"),
-                    location: LatLon { lat: 28.6921, lon: 77.1527 }, // Rohini
-                    description: Some("Bull with deep horn injury".into()),
-                    landmark_hint: Some("Near Rohini East Metro".into()),
-                    wound_severity: Some(80),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710470000000),
-                    updated_at_ms_utc: UnixTimeMs(1710470000000),
-                    reporter_id: UserId::new("user-8"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Open wound, needs immediate disinfection".into()),
-                    species_guess: Some("Cow".into()),
-                    distance_meters: Some(12000.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-9"),
-                    location: LatLon { lat: 28.5273, lon: 77.2185 }, // Saket
-                    description: Some("Cat with broken tail".into()),
-                    landmark_hint: Some("Near Select Citywalk Mall".into()),
-                    wound_severity: Some(50),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710480000000),
-                    updated_at_ms_utc: UnixTimeMs(1710480000000),
-                    reporter_id: UserId::new("user-9"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Suspected spinal/tail fracture".into()),
-                    species_guess: Some("Cat".into()),
-                    distance_meters: Some(5200.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-10"),
-                    location: LatLon { lat: 28.5457, lon: 77.2732 }, // Okhla
-                    description: Some("Stray dog with high fever and lethargy".into()),
-                    landmark_hint: Some("Near NSIC ground".into()),
-                    wound_severity: Some(70),
-                    status: CaseStatus::Claimed,
-                    created_at_ms_utc: UnixTimeMs(1710490000000),
-                    updated_at_ms_utc: UnixTimeMs(1710490000000),
-                    reporter_id: UserId::new("user-10"),
-                    assigned_rescuer_id: Some(UserId::new("rescuer-4")),
-                    photo_url: Some("https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Possible viral infection (Distemper/Parvo)".into()),
-                    species_guess: Some("Dog".into()),
-                    distance_meters: Some(7800.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-11"),
-                    location: LatLon { lat: 28.6139, lon: 77.2090 }, // India Gate / Central
-                    description: Some("Injured eagle unable to fly".into()),
-                    landmark_hint: Some("Near canopy area".into()),
-                    wound_severity: Some(40),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710500000000),
-                    updated_at_ms_utc: UnixTimeMs(1710500000000),
-                    reporter_id: UserId::new("user-11"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1565118531796-763e5082d113?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Right wing fracture".into()),
-                    species_guess: Some("Bird".into()),
-                    distance_meters: Some(2500.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-12"),
-                    location: LatLon { lat: 28.6280, lon: 77.0982 }, // Janakpuri
-                    description: Some("Pregnant dog in distress".into()),
-                    landmark_hint: Some("Near Block B market".into()),
-                    wound_severity: Some(65),
-                    status: CaseStatus::EnRoute,
-                    created_at_ms_utc: UnixTimeMs(1710510000000),
-                    updated_at_ms_utc: UnixTimeMs(1710510000000),
-                    reporter_id: UserId::new("user-12"),
-                    assigned_rescuer_id: Some(UserId::new("rescuer-5")),
-                    photo_url: Some("https://images.unsplash.com/photo-1548191265-cc70d3d45ba1?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Labor complications suspected".into()),
-                    species_guess: Some("Dog".into()),
-                    distance_meters: Some(9100.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-13"),
-                    location: LatLon { lat: 28.5323, lon: 77.2437 }, // Greater Kailash
-                    description: Some("Injured cow with horn wound".into()),
-                    landmark_hint: Some("Near M Block Market".into()),
-                    wound_severity: Some(75),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710520000000),
-                    updated_at_ms_utc: UnixTimeMs(1710520000000),
-                    reporter_id: UserId::new("user-13"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1589923188900-85dae523342b?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Deep laceration on skull".into()),
-                    species_guess: Some("Cow".into()),
-                    distance_meters: Some(5800.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-14"),
-                    location: LatLon { lat: 28.5528, lon: 77.2038 }, // Hauz Khas
-                    description: Some("Limping monkey in village area".into()),
-                    landmark_hint: Some("Near the lake entrance".into()),
-                    wound_severity: Some(55),
-                    status: CaseStatus::Pending,
-                    created_at_ms_utc: UnixTimeMs(1710530000000),
-                    updated_at_ms_utc: UnixTimeMs(1710530000000),
-                    reporter_id: UserId::new("user-14"),
-                    assigned_rescuer_id: None,
-                    photo_url: Some("https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: None,
-                    species_guess: Some("Monkey".into()),
-                    distance_meters: Some(4200.0),
-                },
-                ServerCase {
-                    id: CaseId::new("case-15"),
-                    location: LatLon { lat: 28.5672, lon: 77.2100 }, // AIIMS/South Ex
-                    description: Some("Found kitten with eye infection".into()),
-                    landmark_hint: Some("Near Metro Gate 2".into()),
-                    wound_severity: Some(35),
-                    status: CaseStatus::Resolved,
-                    created_at_ms_utc: UnixTimeMs(1710540000000),
-                    updated_at_ms_utc: UnixTimeMs(1710540000000),
-                    reporter_id: UserId::new("user-15"),
-                    assigned_rescuer_id: Some(UserId::new("rescuer-6")),
-                    photo_url: Some("https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=800&q=80".into()),
-                    thumbnail_url: None,
-                    gemini_diagnosis: Some("Bilateral conjunctivitis".into()),
-                    species_guess: Some("Cat".into()),
-                    distance_meters: Some(3100.0),
-                },
-            ],
+            cases: vec![],
             cases_cursor: None,
             selected_case_id: None,
             offline_store: OfflineStore::new(),
@@ -2090,145 +1836,13 @@ impl Default for Model {
                     lat: 28.6508,
                     lon: 77.1352,
                 },
-                CommunityMember {
-                    id: "ngo1".into(),
-                    name: "Friendicoes SECA".into(),
-                    member_type: CommunityMemberType::NGO,
-                    description: "Oldest animal shelter in Delhi providing hospital care, outpatient clinic, and ambulance service for street animals.".into(),
-                    location_name: "Defence Colony, Delhi".into(),
-                    phone: "+911124320701".into(),
-                    image_url: "https://images.unsplash.com/photo-1602491673980-73aad856d8cc?w=800&q=80".into(),
-                    lat: 28.5724,
-                    lon: 77.2215,
-                },
-                CommunityMember {
-                    id: "vet2".into(),
-                    name: "The Pet Hospital".into(),
-                    member_type: CommunityMemberType::Vet,
-                    description: "Modern facility offering advanced diagnostics, grooming, and specialized orthopedic surgery.".into(),
-                    location_name: "Vasant Kunj, Delhi".into(),
-                    phone: "+919988776655".into(),
-                    image_url: "https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=800&q=80".into(),
-                    lat: 28.5293,
-                    lon: 77.1517,
-                },
-                CommunityMember {
-                    id: "ngo2".into(),
-                    name: "Wildlife SOS".into(),
-                    member_type: CommunityMemberType::NGO,
-                    description: "Dedicated to protecting and conserving India's rich biodiversity. Specialises in elephant and bear rescue.".into(),
-                    location_name: "South Ext, Delhi".into(),
-                    phone: "+919871963535".into(),
-                    image_url: "https://images.unsplash.com/photo-1606103920295-9a091573f160?w=800&q=80".into(),
-                    lat: 28.5714,
-                    lon: 77.2185,
-                },
-                CommunityMember {
-                    id: "vet5".into(),
-                    name: "Gurgaon Pet Hospital".into(),
-                    member_type: CommunityMemberType::Vet,
-                    description: "24-hour emergency hospital with advanced diagnostics and surgery in the heart of Gurgaon.".into(),
-                    location_name: "Sector 45, Gurgaon".into(),
-                    phone: "+911244001234".into(),
-                    image_url: "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=800&q=80".into(),
-                    lat: 28.4595,
-                    lon: 77.0266,
-                },
-                CommunityMember {
-                    id: "ngo5".into(),
-                    name: "Umeed For Animals Foundation".into(),
-                    member_type: CommunityMemberType::NGO,
-                    description: "Rescue and rehabilitation center for sick and injured street animals in Gurgaon.".into(),
-                    location_name: "DLF Phase 1, Gurgaon".into(),
-                    phone: "+919999956541".into(),
-                    image_url: "https://images.unsplash.com/photo-1541591419107-ee82f7f9b7cb?w=800&q=80".into(),
-                    lat: 28.4722,
-                    lon: 77.0863,
-                },
-                CommunityMember {
-                    id: "vet6".into(),
-                    name: "Noida Animal Clinic".into(),
-                    member_type: CommunityMemberType::Vet,
-                    description: "Specialized avian and exotic pet care alongside domestic cat and dog medicine.".into(),
-                    location_name: "Sector 18, Noida".into(),
-                    phone: "+911204123456".into(),
-                    image_url: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=800&q=80".into(),
-                    lat: 28.5708,
-                    lon: 77.3271,
-                },
-                CommunityMember {
-                    id: "ngo6".into(),
-                    name: "Compassion for Animals".into(),
-                    member_type: CommunityMemberType::NGO,
-                    description: "Promoting kindness through education and direct rescue operations in East Delhi and Noida.".into(),
-                    location_name: "Sector 62, Noida".into(),
-                    phone: "+919811223344".into(),
-                    image_url: "https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800&q=80".into(),
-                    lat: 28.6258,
-                    lon: 77.3732,
-                },
-                CommunityMember {
-                    id: "vet3".into(),
-                    name: "Dr. Kapoor's Pet Clinic".into(),
-                    member_type: CommunityMemberType::Vet,
-                    description: "Personalized care for domestic pets and birds. Specializing in vaccinations and preventive medicine.".into(),
-                    location_name: "Janakpuri, Delhi".into(),
-                    phone: "+919810012345".into(),
-                    image_url: "https://images.unsplash.com/photo-1599443015574-be5fe8a05783?w=800&q=80".into(),
-                    lat: 28.6219,
-                    lon: 77.0878,
-                },
-                CommunityMember {
-                    id: "ngo3".into(),
-                    name: "Red Paws Rescue".into(),
-                    member_type: CommunityMemberType::NGO,
-                    description: "Focused on managing the stray dog population through sterilisation and finding forever homes through adoption.".into(),
-                    location_name: "Sainik Farms, Delhi".into(),
-                    phone: "+919958156621".into(),
-                    image_url: "https://images.unsplash.com/photo-1591768793355-74dcaaf41850?w=800&q=80".into(),
-                    lat: 28.5135,
-                    lon: 77.2144,
-                },
-                CommunityMember {
-                    id: "vet4".into(),
-                    name: "Max Vets Specialized Hospital".into(),
-                    member_type: CommunityMemberType::Vet,
-                    description: "Multi-specialty hospital with radiology, cardiology, and a 24-hour trauma center for critical cases.".into(),
-                    location_name: "East of Kailash, Delhi".into(),
-                    phone: "+911140503070".into(),
-                    image_url: "https://images.unsplash.com/photo-1527672829624-f3a142faafec?w=800&q=80".into(),
-                    lat: 28.5588,
-                    lon: 77.2458,
-                },
-                CommunityMember {
-                    id: "ngo4".into(),
-                    name: "People for Animals (PFA)".into(),
-                    member_type: CommunityMemberType::NGO,
-                    description: "India's largest animal welfare organization. Operates shelters, ambulances, and runs awareness campaigns.".into(),
-                    location_name: "Connaught Place, Delhi".into(),
-                    phone: "+911123357088".into(),
-                    image_url: "https://images.unsplash.com/photo-1544568100-847a948585b9?w=800&q=80".into(),
-                    lat: 28.6328,
-                    lon: 77.2197,
-                },
-                CommunityMember {
-                    id: "vet7".into(),
-                    name: "Pet Care Clinic".into(),
-                    member_type: CommunityMemberType::Vet,
-                    description: "Comprehensive veterinary services including pathology, surgery, and grooming for all small animals.".into(),
-                    location_name: "Sector 10, Dwarka".into(),
-                    phone: "+919911223344".into(),
-                    image_url: "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=800&q=80".into(),
-                    lat: 28.5823,
-                    lon: 77.0500,
-                },
             ],
             is_loading_community: false,
             active_chat_member_id: None,
+            profile: None,
         }
     }
 }
-
 impl Model {
     pub fn update_timestamp(&mut self) {
         self.view_timestamp_ms = get_current_time_ms();
@@ -2503,6 +2117,24 @@ pub enum CommunityMemberType {
     NGO,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum UserMemberType {
+    Individual,
+    NGO,
+    Vet,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct UserProfile {
+    pub name: String,
+    pub email: String,
+    pub phone: Option<String>,
+    pub member_type: UserMemberType,
+    pub karma: i32,
+    pub rescues: i32,
+    pub verification_level: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct CommunityMember {
     pub id: String,
@@ -2516,7 +2148,8 @@ pub struct CommunityMember {
     pub lon: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
     Noop,
 
@@ -2532,6 +2165,12 @@ pub enum Event {
     },
     LoginFailed {
         error: String,
+    },
+    MfaRequired {
+        challenge_id: String,
+    },
+    MfaVerifyRequested {
+        code: String,
     },
     LogoutRequested,
     LogoutCompleted,
@@ -2591,6 +2230,7 @@ pub enum Event {
         member_id: String,
     },
     ChatClosed,
+    ProfileUpdated(UserProfile),
 
     CreateCaseRequested(CreateCasePayload),
     CreateCaseResponse {
@@ -3009,6 +2649,7 @@ pub struct ViewModel {
     pub community_members: Vec<CommunityMember>,
     pub is_loading_community: bool,
     pub active_chat_member: Option<CommunityMember>,
+    pub profile: Option<UserProfile>,
 }
 
 pub mod app {
@@ -3619,22 +3260,28 @@ pub mod app {
                 None => return,
             };
 
+            // Using Appwrite REST API
+            let project_id = "69b47d6d002eda226e97";
+            let database_id = "warmstreet";
+            let collection_id = "reports"; // Assuming typical collection name for cases/reports
+            
+            // Build the Appwrite endpoint URL
             let mut url = format!(
-                "/api/v1/cases?lat={}&lng={}&radius={}",
-                center.lat(),
-                center.lon(),
-                model.area_radius_m
+                "https://sgp.cloud.appwrite.io/v1/databases/{}/collections/{}/documents",
+                database_id,
+                collection_id
             );
 
-            if let Some(c) = cursor {
-                url.push_str(&format!("&cursor={c}"));
-            }
+            // TODO: Append Appwrite queries for location-based filtering if needed 
+            // e.g., ?queries[]=limit(100)
 
             let mut builder = caps.http.get(&url);
-            builder = builder;
+            builder = builder
+                .header("X-Appwrite-Project", project_id);
 
+            // Use the JWT token for Appwrite auth
             if let Some(token) = &model.jwt_token {
-                builder = builder.header("Authorization", &format!("Bearer {token}"));
+                builder = builder.header("X-Appwrite-JWT", token);
             }
 
             if cursor.is_some() {
@@ -3985,31 +3632,93 @@ pub mod app {
         ) {
             model.is_refreshing = false;
 
+            #[derive(serde::Deserialize)]
+            struct AppwriteCaseDocument {
+                #[serde(rename = "$id")]
+                id: String,
+                location_lat: Option<f64>,
+                location_lon: Option<f64>,
+                description: Option<String>,
+                landmark_hint: Option<String>,
+                wound_severity: Option<u8>,
+                status: Option<String>,
+                #[serde(rename = "$createdAt")]
+                created_at: Option<String>,
+                #[serde(rename = "$updatedAt")]
+                updated_at: Option<String>,
+                reporter_id: Option<String>,
+                assigned_rescuer_id: Option<String>,
+                photo_url: Option<String>,
+                thumbnail_url: Option<String>,
+                gemini_diagnosis: Option<String>,
+                species_guess: Option<String>,
+            }
+
+            #[derive(serde::Deserialize)]
+            struct AppwriteListDocuments {
+                documents: Vec<AppwriteCaseDocument>,
+            }
+
             match result {
                 Ok(output) if output.is_success() => {
-                    match serde_json::from_slice::<ListCasesResponse>(&output.body()) {
+                    match serde_json::from_slice::<AppwriteListDocuments>(&output.body()) {
                         Ok(response) => {
-                            if is_load_more {
-                                model.cases.extend(response.cases);
-                            } else {
-                                model.cases = response.cases;
+                            let mut cases = Vec::with_capacity(response.documents.len());
+                            for doc in response.documents {
+                                let lat = doc.location_lat.unwrap_or(0.0);
+                                let lon = doc.location_lon.unwrap_or(0.0);
+                                let status_str = doc.status.unwrap_or_else(|| "Pending".to_string());
+                                let status = match status_str.to_lowercase().as_str() {
+                                    "claimed" => CaseStatus::Claimed,
+                                    "resolved" => CaseStatus::Resolved,
+                                    "cancelled" => CaseStatus::Cancelled,
+                                    _ => CaseStatus::Pending,
+                                };
+
+                                let parse_date = |s: Option<String>| {
+                                    s.and_then(|date_str| chrono::DateTime::parse_from_rfc3339(&date_str).ok())
+                                     .map(|dt| UnixTimeMs(dt.timestamp_millis() as u64))
+                                     .unwrap_or(UnixTimeMs(0))
+                                };
+
+                                cases.push(ServerCase {
+                                    id: CaseId::new(&doc.id),
+                                    location: LatLon { lat, lon },
+                                    description: doc.description,
+                                    landmark_hint: doc.landmark_hint,
+                                    wound_severity: doc.wound_severity,
+                                    status,
+                                    created_at_ms_utc: parse_date(doc.created_at),
+                                    updated_at_ms_utc: parse_date(doc.updated_at),
+                                    reporter_id: UserId::new(&doc.reporter_id.unwrap_or_default()),
+                                    assigned_rescuer_id: doc.assigned_rescuer_id.map(|id| UserId::new(&id)),
+                                    photo_url: doc.photo_url,
+                                    thumbnail_url: doc.thumbnail_url,
+                                    gemini_diagnosis: doc.gemini_diagnosis,
+                                    species_guess: doc.species_guess,
+                                    distance_meters: None, // Or calculate if needed
+                                });
                             }
-                            model.cases_cursor = response.next_cursor;
+
+                            if is_load_more {
+                                model.cases.extend(cases);
+                            } else {
+                                model.cases = cases;
+                            }
+                            model.cases_cursor = None; // For now don't handle pagination from Appwrite
                             model.offline_store.update_last_refresh();
                             model.enforce_collection_limits();
-
-                            ;
                         }
                         Err(e) => {
-                            ;
+                            tracing::error!("Failed to parse Appwrite response: {}", e);
                         }
                     }
                 }
                 Ok(output) => {
-                    ;
+                    tracing::error!("Appwrite error: {} - {:?}", output.status(), String::from_utf8_lossy(&output.body()));
                 }
                 Err(e) => {
-                    ;
+                    tracing::error!("Appwrite network error: {:?}", e);
                 }
             }
         }
@@ -4025,15 +3734,14 @@ pub mod app {
         fn update(&self, event: Event, model: &mut Model, caps: &Capabilities) -> Command<Self::Effect, Self::Event> {
             model.update_timestamp();
 
-            let event_name = event.name();
-            ;
-
-            if event.is_user_initiated() {
-                ;
-            }
-
             match event {
-                Event::Noop => {}
+                Event::ProfileUpdated(profile) => {
+                    model.profile = Some(profile);
+                    caps.render.render();
+                    Command::done()
+                }
+
+                Event::Noop => Command::done(),
 
                 Event::AppStarted => {
                     model.state = AppState::Loading;
@@ -4080,6 +3788,16 @@ pub mod app {
                     model.jwt_token = Some(jwt);
                     model.state = AppState::OnboardingLocation;
                     // TODO: Store or use user_type in model if needed
+                    caps.render.render();
+                }
+
+                Event::MfaRequired { challenge_id: _ } => {
+                    model.state = AppState::MfaVerification;
+                    caps.render.render();
+                }
+
+                Event::MfaVerifyRequested { code: _ } => {
+                    model.state = AppState::Authenticating;
                     caps.render.render();
                 }
 
@@ -5306,6 +5024,7 @@ pub mod app {
                 active_chat_member: model.active_chat_member_id.as_ref().and_then(|id| {
                     model.community_members.iter().find(|m| &m.id == id).cloned()
                 }),
+                profile: model.profile.clone(),
             }
         }
     }
