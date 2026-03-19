@@ -1,18 +1,15 @@
 // lib.rs — tauri-plugin-nativemap
 //
-// This Tauri plugin bridges the Crux MapCapability to platform-native map SDKs:
+// This Tauri plugin provides platform-native map functionality:
 //   iOS    → Apple Maps (MKMapView) via Swift code in /ios/Sources/NativeMapPlugin.swift
 //   Android → Google Maps SDK via Kotlin code in /android/src/.../NativeMapPlugin.kt
-//   Desktop → No-op (the UI shows the static placeholder image)
+//   Desktop → No-op (emits map-ready immediately)
 //
-// The plugin exposes three Tauri commands that the Tauri shell calls when Crux
-// emits a MapOperation effect:
-//   show_map(config: MapConfig) → MapResult
-//   update_pins(pins: [MapPin]) → MapResult
-//   hide_map()                  → MapResult
+// The plugin exposes Tauri commands for map operations:
+//   show_map, update_pins, hide_map, pan_to_location, set_zoom
 //
-// The Swift / Kotlin code emits a "map-pin-tapped" Tauri event back to Rust
-// when the user taps a pin, and Rust forwards it into Crux as a MapPinTapped event.
+// When the user taps a pin, the Swift/Kotlin layer emits "map-pin-tapped"
+// which is forwarded to the app state.
 
 mod commands;
 mod models;
@@ -36,14 +33,13 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         ])
         .setup(|app, _api| {
             tracing::info!("🗺️ tauri-plugin-nativemap initialised");
-            // Store a handle so commands can emit events back.
             app.manage(NativeMapState::default());
             Ok(())
         })
         .build()
 }
 
-/// Plugin-level state (currently a placeholder; future: track shown/hidden status).
+/// Plugin-level state for tracking map visibility
 #[derive(Default)]
 pub struct NativeMapState {
     pub is_visible: std::sync::Mutex<bool>,

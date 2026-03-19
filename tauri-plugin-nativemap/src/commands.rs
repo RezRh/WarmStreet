@@ -1,8 +1,6 @@
 // commands.rs — Tauri command handlers for tauri-plugin-nativemap
 //
-// These commands are called by src-tauri/src/lib.rs when it receives a
-// MapOperation effect from Crux.  Each command delegates to the correct
-// platform implementation (Swift on iOS, Kotlin on Android, no-op on desktop).
+// These commands handle map operations for the native map plugin.
 
 use crate::models::{MapConfig, MapError, MapOutput, MapPin};
 use tauri::{AppHandle, Emitter, Runtime, State};

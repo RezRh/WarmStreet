@@ -8,7 +8,7 @@ publish = false
 
 [lib]
 name = "warmstreet_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [[bin]]
 name = "warmstreet"
@@ -30,6 +30,8 @@ serde_json = "1.0"
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+geo = { version = "0.28", features = ["serde"] }
 
-# Shared Rust Core (Crux)
+# Shared Rust types and utilities
 shared = { path = "../shared" }

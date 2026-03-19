@@ -9,27 +9,19 @@ import { account } from './lib/appwrite';
 import { ID, OAuthProvider } from 'appwrite';
 import './App.css';
 
-// ViewModel from Crux Rust core
+// ViewModel from Tauri Rust backend
 interface ViewModel {
   // Client-side control
-  status?: 'Loading' | 'Signup' | 'Login' | 'Unauthenticated' | 'Ready' | 'Error';
-  
-  // Rust ViewState
-  state?: {
-    type: 'Loading' | 'Unauthenticated' | 'Ready' | 'Error' | 'OnboardingLocation' | 'Authenticating' | 'MfaVerification';
-    [key: string]: any;
-  };
+  status: 'Loading' | 'Signup' | 'Login' | 'Unauthenticated' | 'Ready' | 'Error' | 'Authenticating' | 'MfaVerification';
 
-  // Shared Data
-  feed_view?: 'map' | 'list';
-  cases?: Case[];
-  selected_case?: Case | null;
-  is_refreshing?: boolean;
-  error?: string | null;
-  toast?: string | null;
-  community_members: any[];
-  is_loading_community: boolean;
-  active_chat_member: any | null;
+  // App state
+  feed_view: 'map' | 'list';
+  cases: Case[];
+  map_pins: MapPin[];
+  selected_case: Case | null;
+  is_refreshing: boolean;
+  error: string | null;
+  toast: string | null;
   profile?: {
     name: string;
     email: string;
@@ -39,18 +31,37 @@ interface ViewModel {
     rescues: number;
     verification_level: string;
   };
+  community_members: CommunityMember[];
+  is_loading_community: boolean;
+  active_chat_member: CommunityMember | null;
 }
 
 interface Case {
   id: string;
   description: string;
   status: string;
-  severity: 'Low' | 'Moderate' | 'High' | 'Critical';
+  severity: number;
   type: string;
-  age: string;
-  breed: string;
-  imageUrl: string;
-  date: string;
+  age?: string;
+  breed?: string;
+  image_url?: string;
+  created_at: string;
+}
+
+interface MapPin {
+  case_id: string;
+  lat: number;
+  lon: number;
+  severity: number;
+  status: string;
+}
+
+interface CommunityMember {
+  id: string;
+  name: string;
+  member_type: string;
+  karma: number;
+  last_active: string;
 }
 
 const sampleTestimonials: Testimonial[] = [
@@ -75,32 +86,10 @@ const sampleTestimonials: Testimonial[] = [
 ];
 
 const initial_view_model: ViewModel = {
-  status: 'Signup',
+  status: 'Unauthenticated',
   feed_view: 'map',
-  cases: [
-    {
-      id: '1',
-      description: 'Dog scratching ear severely',
-      status: 'IN PROGRESS',
-      severity: 'Moderate',
-      type: 'Dog',
-      age: 'Adult',
-      breed: 'Mixed/Unknown',
-      imageUrl: 'https://images.unsplash.com/photo-1541233349642-6e425fe6190e?w=400&q=80',
-      date: '12/4/2025'
-    },
-    {
-      id: '2',
-      description: 'Cat with wounded leg',
-      status: 'SUBMITTED',
-      severity: 'High',
-      type: 'Cat',
-      age: 'Young',
-      breed: 'Persian',
-      imageUrl: 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400&q=80',
-      date: '12/4/2025'
-    }
-  ],
+  cases: [],
+  map_pins: [],
   selected_case: null,
   is_refreshing: false,
   error: null,
@@ -375,7 +364,7 @@ function App() {
 
   const isAppReady = () => {
     const vm = view_model();
-    return vm.status === 'Ready' || (vm.state && vm.state.type === 'Ready');
+    return vm.status === 'Ready';
   };
 
   return (
@@ -398,9 +387,9 @@ function App() {
       </Show>
 
       {isAppReady() ? (
-        <HomePage 
+        <HomePage
           user={currentUser()}
-          cases={view_model().status === 'Ready' ? view_model().cases! : view_model().state?.list_items || []}
+          cases={view_model().cases}
           communityMembers={view_model().community_members}
           isLoadingCommunity={view_model().is_loading_community}
           activeChatMember={view_model().active_chat_member}

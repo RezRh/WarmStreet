@@ -1,8 +1,6 @@
 // models.rs — shared data types for tauri-plugin-nativemap
 //
-// These mirror the types in shared/src/capabilities/map.rs but live in the
-// Tauri shell layer so they can be (de)serialised over the IPC bridge without
-// depending on the shared crate.
+// These types are used for serializing map data over the Tauri IPC bridge.
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -38,11 +36,11 @@ impl Default for MapConfig {
 /// A single case pin to place on the map.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MapPin {
-    /// Matches the Crux CaseId.
+    /// Unique case identifier
     pub id: String,
     pub lat: f64,
     pub lon: f64,
-    /// "Critical" | "High" | "Moderate" | "Low" — the native layer uses this to pick colour.
+    /// Severity level for color coding: "Critical" | "High" | "Moderate" | "Low"
     pub severity: String,
     pub title: String,
     pub subtitle: Option<String>,

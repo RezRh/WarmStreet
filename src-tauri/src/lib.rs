@@ -1,172 +1,304 @@
-use shared::{App, CruxApp, Event, Model, UserProfile};
+// lib.rs - Tauri backend without Crux
+// Direct state management using Tauri's State
+
+use serde_json::Value as JsonValue;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State, Listener};
 use tauri_plugin_nativemap;
-use serde_json::Value as JsonValue;
+use shared::{AppState as SharedAppState, Case, CaseStatus, FeedView, MapPin, UserProfile, ViewModel, CommunityMember};
+use chrono::Utc;
 
-/// Global state: holds the Crux App instance and current model
-pub struct CruxState {
-    pub app: App,
-    pub model: Mutex<Model>,
+/// Application state managed by Tauri
+pub struct AppInstanceState {
+    pub view_model: Mutex<ViewModel>,
+    pub jwt: Mutex<Option<String>>,
+    pub user_id: Mutex<Option<String>>,
 }
 
-impl CruxState {
+impl AppInstanceState {
     pub fn new() -> Self {
         Self {
-            app: App::default(),
-            model: Mutex::new(Model::default()),
+            view_model: Mutex::new(ViewModel::default()),
+            jwt: Mutex::new(None),
+            user_id: Mutex::new(None),
         }
     }
 }
 
-/// Convert UI event string to Crux Event enum
-fn string_to_event(event: &str, payload: Option<&JsonValue>) -> Event {
-    match event {
-        "AppStarted" => Event::AppStarted,
-        "OnboardingComplete" => Event::OnboardingComplete,
-        "LoginRequested" => Event::LoginRequested,
-        "LoginCompleted" => {
-            if let Some(p) = payload {
-                let jwt = p.get("jwt").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let user_id = p.get("user_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let user_type = p.get("metadata")
-                    .and_then(|m| m.get("user_type"))
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("individual")
-                    .to_string();
-                Event::LoginCompleted { jwt, user_id, user_type }
-            } else {
-                Event::Noop
-            }
-        }
-        "LogoutRequested" => Event::LogoutRequested,
-        "SwitchToMap" => Event::SwitchToMap,
-        "SwitchToList" => Event::SwitchToList,
-        "ReportSpotted" => Event::CapturePhotoRequested,
-        "CaseSelected" => {
-            let id = payload
-                .and_then(|p| p.get("case_id"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown")
-                .to_string();
-            Event::CaseSelected { case_id: id }
-        }
-        "DismissError" => Event::DismissError,
-        "MapReady" => Event::MapReady,
-        "MapPinTapped" => {
-            let id = payload
-                .and_then(|p| p.as_str())
-                .unwrap_or("unknown")
-                .to_string();
-            Event::MapPinTapped { case_id: id }
-        }
-        "CommunityRequested" => Event::CommunityRequested,
-        "MessageMemberRequested" => {
-            let id = payload
-                .and_then(|p| p.get("member_id"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown")
-                .to_string();
-            Event::MessageMemberRequested { member_id: id }
-        }
-        "ChatClosed" => Event::ChatClosed,
-        "CaseDeselected" => Event::CaseDeselected,
-        "ProfileUpdated" => {
-            if let Some(p) = payload {
-                match serde_json::from_value(p.clone()) {
-                    Ok(profile) => Event::ProfileUpdated(profile),
-                    Err(e) => {
-                        tracing::error!("❌ Failed to deserialize profile: {}", e);
-                        Event::Noop
-                    }
-                }
-            } else {
-                Event::Noop
-            }
-        }
-        "MfaRequired" => {
-            let challenge_id = payload
-                .and_then(|p| p.get("challenge_id"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            Event::MfaRequired { challenge_id }
-        }
-        "MfaVerifyRequested" => {
-            let code = payload
-                .and_then(|p| p.get("code"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            Event::MfaVerifyRequested { code }
-        }
-        _ => Event::Noop,
+impl Default for AppInstanceState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-/// Emit ViewModel update to UI
-fn emit_view_model(app_handle: &AppHandle, state: &State<'_, CruxState>) -> Result<(), String> {
-    let model = state.model.lock().map_err(|e| e.to_string())?;
-    let view_model = state.app.view(&model);
-    drop(model);
-    
-    app_handle.emit("crux-update", view_model).map_err(|e| e.to_string())?;
-    tracing::debug!("✅ Emitted ViewModel");
-    Ok(())
+/// Tauri command: Get current view model
+#[tauri::command]
+fn get_view_model(state: State<'_, AppInstanceState>) -> Result<ViewModel, String> {
+    let view_model = state.view_model.lock().map_err(|e| e.to_string())?;
+    Ok(view_model.clone())
 }
 
-/// Tauri command: Dispatch event from UI to Crux
+/// Tauri command: Dispatch event from UI
 #[tauri::command]
 fn handle_event(
     app_handle: AppHandle,
-    state: State<'_, CruxState>,
+    state: State<'_, AppInstanceState>,
     event: String,
     payload: Option<JsonValue>,
 ) -> Result<(), String> {
     tracing::info!("📥 Event: {} payload: {:?}", event, payload);
 
-    let crux_event = string_to_event(&event, payload.as_ref());
-    let mut model = state.model.lock().map_err(|e| e.to_string())?;
-    let _commands = state.app.update(crux_event, &mut model, &shared::capabilities::Capabilities::default());
-    drop(model);
-    
+    let mut view_model = state.view_model.lock().map_err(|e| e.to_string())?;
+
+    match event.as_str() {
+        "AppStarted" => {
+            view_model.status = SharedAppState::Unauthenticated;
+            tracing::info!("✅ App started");
+        }
+
+        "OnboardingComplete" => {
+            view_model.status = SharedAppState::Ready;
+        }
+
+        "LoginRequested" => {
+            view_model.status = SharedAppState::Authenticating;
+        }
+
+        "LoginCompleted" => {
+            if let Some(p) = &payload {
+                let jwt = p.get("jwt").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let user_id = p.get("user_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+                *state.jwt.lock().map_err(|e| e.to_string())? = Some(jwt);
+                *state.user_id.lock().map_err(|e| e.to_string())? = Some(user_id);
+
+                view_model.status = SharedAppState::Ready;
+
+                // Add some sample cases for testing
+                view_model.cases = vec![
+                    Case {
+                        id: "1".to_string(),
+                        location: shared::Coordinate { lat: 37.7749, lon: -122.4194 },
+                        description: "Dog with injured leg".to_string(),
+                        status: CaseStatus::Pending,
+                        severity: 3,
+                        case_type: "Dog".to_string(),
+                        age: Some("Adult".to_string()),
+                        breed: Some("Mixed".to_string()),
+                        image_url: Some("https://images.unsplash.com/photo-1541233349642-6e425fe6190e?w=400&q=80".to_string()),
+                        created_at: Utc::now(),
+                        reporter_id: None,
+                        assigned_rescuer_id: None,
+                    },
+                    Case {
+                        id: "2".to_string(),
+                        location: shared::Coordinate { lat: 37.7849, lon: -122.4094 },
+                        description: "Cat stuck in tree".to_string(),
+                        status: CaseStatus::Claimed,
+                        severity: 2,
+                        case_type: "Cat".to_string(),
+                        age: Some("Young".to_string()),
+                        breed: Some("Tabby".to_string()),
+                        image_url: Some("https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400&q=80".to_string()),
+                        created_at: Utc::now(),
+                        reporter_id: None,
+                        assigned_rescuer_id: None,
+                    },
+                ];
+
+                // Create map pins from cases
+                view_model.map_pins = view_model.cases.iter().map(|c| MapPin {
+                    case_id: c.id.clone(),
+                    lat: c.location.lat,
+                    lon: c.location.lon,
+                    severity: c.severity,
+                    status: c.status,
+                }).collect();
+            }
+        }
+
+        "LogoutRequested" => {
+            *state.jwt.lock().map_err(|e| e.to_string())? = None;
+            *state.user_id.lock().map_err(|e| e.to_string())? = None;
+            view_model.status = SharedAppState::Unauthenticated;
+            view_model.cases.clear();
+            view_model.map_pins.clear();
+        }
+
+        "SwitchToMap" => {
+            view_model.feed_view = FeedView::Map;
+        }
+
+        "SwitchToList" => {
+            view_model.feed_view = FeedView::List;
+        }
+
+        "CaseSelected" => {
+            if let Some(p) = &payload {
+                let case_id = p.get("case_id").and_then(|v| v.as_str()).unwrap_or("");
+                view_model.selected_case = view_model.cases.iter()
+                    .find(|c| c.id == case_id)
+                    .cloned();
+            }
+        }
+
+        "CaseDeselected" => {
+            view_model.selected_case = None;
+        }
+
+        "ReportSpotted" => {
+            view_model.toast = Some("Camera feature coming soon!".to_string());
+        }
+
+        "DismissError" => {
+            view_model.error = None;
+        }
+
+        "MapReady" => {
+            tracing::info!("🗺️ Map is ready");
+        }
+
+        "MapPinTapped" => {
+            if let Some(p) = &payload {
+                let case_id = p.as_str().unwrap_or("");
+                tracing::info!("📍 Pin tapped: {}", case_id);
+                view_model.selected_case = view_model.cases.iter()
+                    .find(|c| c.id == case_id)
+                    .cloned();
+            }
+        }
+
+        "CommunityRequested" => {
+            view_model.is_loading_community = true;
+            // Simulate loading community members
+            view_model.community_members = vec![
+                CommunityMember {
+                    id: "1".to_string(),
+                    name: "Sarah Chen".to_string(),
+                    member_type: "Individual".to_string(),
+                    karma: 150,
+                    last_active: "2m ago".to_string(),
+                },
+                CommunityMember {
+                    id: "2".to_string(),
+                    name: "Marcus Johnson".to_string(),
+                    member_type: "Vet".to_string(),
+                    karma: 320,
+                    last_active: "5m ago".to_string(),
+                },
+                CommunityMember {
+                    id: "3".to_string(),
+                    name: "David Martinez".to_string(),
+                    member_type: "NGO".to_string(),
+                    karma: 580,
+                    last_active: "10m ago".to_string(),
+                },
+            ];
+            view_model.is_loading_community = false;
+        }
+
+        "MessageMemberRequested" => {
+            if let Some(p) = &payload {
+                let member_id = p.get("member_id").and_then(|v| v.as_str()).unwrap_or("");
+                view_model.active_chat_member = view_model.community_members.iter()
+                    .find(|m| m.id == member_id)
+                    .cloned();
+            }
+        }
+
+        "ChatClosed" => {
+            view_model.active_chat_member = None;
+        }
+
+        "ProfileUpdated" => {
+            if let Some(p) = &payload {
+                match serde_json::from_value::<UserProfile>(p.clone()) {
+                    Ok(profile) => {
+                        view_model.profile = Some(profile);
+                    }
+                    Err(e) => {
+                        tracing::error!("❌ Failed to deserialize profile: {}", e);
+                    }
+                }
+            }
+        }
+
+        "MfaRequired" => {
+            view_model.status = SharedAppState::MfaVerification;
+        }
+
+        "MfaVerifyRequested" => {
+            // Handle MFA verification
+            view_model.status = SharedAppState::Ready;
+        }
+
+        _ => {
+            tracing::warn!("⚠️ Unknown event: {}", event);
+        }
+    }
+
+    drop(view_model);
+
+    // Emit updated view model to UI
     emit_view_model(&app_handle, &state)?;
+
+    Ok(())
+}
+
+/// Emit ViewModel update to UI
+fn emit_view_model(app_handle: &AppHandle, state: &State<'_, AppInstanceState>) -> Result<(), String> {
+    let view_model = state.view_model.lock().map_err(|e: std::sync::PoisonError<_>| e.to_string())?;
+    app_handle.emit("crux-update", &*view_model).map_err(|e| e.to_string())?;
+    tracing::debug!("✅ Emitted ViewModel");
     Ok(())
 }
 
 /// Initialize and run the Tauri application
 pub fn run_app() {
-    tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
     tracing::info!("🚀 Starting WarmStreet");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_nativemap::init())
-        .manage(CruxState::new())
-        .invoke_handler(tauri::generate_handler![handle_event])
+        .manage(AppInstanceState::new())
+        .invoke_handler(tauri::generate_handler![
+            handle_event,
+            get_view_model
+        ])
         .setup(|app| {
             let app_handle = app.handle().clone();
 
-            // Listen for "map-pin-tapped" events emitted by the Swift/Kotlin layer.
-            // Forward them into Crux as a MapPinTapped event.
-            let state: tauri::State<'_, CruxState> = app.state();
-            let _state_ref = state.inner();
-
-            app_handle.clone().listen("map-pin-tapped", move |tauri_event| {
+            // Listen for "map-pin-tapped" events from native map layer
+            let app_handle_clone = app_handle.clone();
+            app_handle.listen("map-pin-tapped", move |tauri_event| {
                 let payload = tauri_event.payload();
                 let case_id = payload.trim_matches('"').to_string();
                 tracing::info!("📍 map-pin-tapped: caseId={}", case_id);
-                // Re-dispatch as a Crux event via the existing handle_event pathway.
-                // We fire it as a shell-side event directly on the app handle.
-                app_handle.emit("crux-map-pin-tapped", case_id).ok();
+
+                // Forward to handle_event
+                let state: tauri::State<'_, AppInstanceState> = app_handle_clone.state();
+                let _ = handle_event(
+                    app_handle_clone.clone(),
+                    state,
+                    "MapPinTapped".to_string(),
+                    Some(serde_json::json!(case_id)),
+                );
             });
 
-            // Listen for "map-ready" to tell Crux the native view is up.
-            let app_handle2 = app.handle().clone();
-            app_handle2.clone().listen("map-ready", move |_| {
-                tracing::info!("🗺️ map-ready received — forwarding MapReady to Crux");
-                // The Crux core needs a MapReady event — the frontend JS will dispatch it.
-                app_handle2.emit("crux-map-ready", ()).ok();
+            // Listen for "map-ready" event
+            let app_handle2 = app_handle.clone();
+            app_handle.listen("map-ready", move |_| {
+                tracing::info!("🗺️ map-ready received");
+                let state: tauri::State<'_, AppInstanceState> = app_handle2.state();
+                let _ = handle_event(
+                    app_handle2.clone(),
+                    state,
+                    "MapReady".to_string(),
+                    None,
+                );
             });
 
             Ok(())
