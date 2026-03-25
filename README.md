@@ -20,9 +20,9 @@ Zero lost reports. Zero volunteer collisions. Zero privacy leaks. Zero infrastru
 └────────────────────────┬────────────────────────────────┘
                          │ Tauri IPC
 ┌────────────────────────▼────────────────────────────────┐
-│  Rust Core (Crux)                                       │
-│  Single source of truth • State machine • Offline outbox│
-│  AI orchestration • Optimistic updates                  │
+│  Rust Backend (Tauri)                                   │
+│  Single source of truth • State management • IPC bridge │
+│  AI orchestration • Optimistic updates • Native Map     │
 └────────────────────────┬────────────────────────────────┘
                          │ HTTPS (H2/H3)
 ┌────────────────────────▼────────────────────────────────┐
@@ -64,7 +64,7 @@ Zero lost reports. Zero volunteer collisions. Zero privacy leaks. Zero infrastru
 
 | Layer               | Technology                           | Why It Wins                                   |
 |---------------------|--------------------------------------|-----------------------------------------------|
-| Shared Core         | Rust + Crux                          | One deterministic brain for all platforms     |
+| Shared Logic        | Rust (src-tauri)                     | High-performance native logic                |
 | App Shell           | Tauri v2.10.x                        | Single codebase for desktop & mobile          |
 | Frontend            | SolidJS + Vite                       | Fastest runtime, fine-grained signals, zero VDOM |
 | Styling             | Tailwind CSS                         | Utility-first, consistent design              |
@@ -79,13 +79,13 @@ Zero lost reports. Zero volunteer collisions. Zero privacy leaks. Zero infrastru
 
 ---
 
-## Why SolidJS + Crux = Zero Jank
+## Why SolidJS + Tauri = Zero Jank
 
-SolidJS is the perfect UI layer for Crux because:
+SolidJS is the perfect UI layer for Tauri because:
 
 1. **Fine-Grained Reactivity** — Solid's signals update only the exact text node or DOM element that changed. No virtual DOM diffing. No wasted cycles.
 
-2. **Reactive Observers** — UI components simply observe the ViewModel from Rust. No business logic in TypeScript.
+2. **Reactive Observers** — UI components simply observe the state from Rust. Fast IPC via Tauri 2.0.
 
 3. **Binary Size** — ~6MB final APK/IPA. React Native: 25MB+. Flutter: 30MB+.
 
@@ -100,15 +100,15 @@ export function RescueButton() {
   const [view, setView] = createSignal({ status: 'Idle', animalCount: 0 });
 
   onMount(() => {
-    // Listen for state updates from Crux Core
-    listen('crux-update', (event) => {
+    // Listen for state updates from Tauri Backend
+    listen('state-update', (event) => {
       setView(event.payload);
     });
   });
 
   const handleReport = () => {
-    // Dispatch an Event to the Crux State Machine
-    invoke('process_event', { event: { type: 'ReportSpotted' } });
+    // Dispatch an event to the backend
+    invoke('handle_event', { event: 'ReportSpotted' });
   };
 
   return (
@@ -156,7 +156,6 @@ warmstreet/
 │   │   └── appwrite.ts     # Appwrite client initialization
 │   ├── components/
 ├── src-tauri/              # Tauri v2 Rust backend
-├── shared/                 # Rust Crux shared brain
 └── docs/blueprint/         # Full technical deep-dive
 ```
 

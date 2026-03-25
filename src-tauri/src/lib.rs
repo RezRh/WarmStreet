@@ -1,11 +1,13 @@
-// lib.rs - Tauri backend without Crux
-// Direct state management using Tauri's State
+mod types;
+mod image_processing;
+mod crypto;
+mod vision;
 
 use serde_json::Value as JsonValue;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State, Listener};
 use tauri_plugin_nativemap;
-use shared::{AppState as SharedAppState, Case, CaseStatus, FeedView, MapPin, UserProfile, ViewModel, CommunityMember};
+use crate::types::{AppState as SharedAppState, Case, CaseStatus, FeedView, MapPin, UserProfile, ViewModel, CommunityMember, Coordinate};
 use chrono::Utc;
 
 /// Application state managed by Tauri
@@ -78,7 +80,7 @@ fn handle_event(
                 view_model.cases = vec![
                     Case {
                         id: "1".to_string(),
-                        location: shared::Coordinate { lat: 37.7749, lon: -122.4194 },
+                        location: Coordinate { lat: 37.7749, lon: -122.4194 },
                         description: "Dog with injured leg".to_string(),
                         status: CaseStatus::Pending,
                         severity: 3,
@@ -92,7 +94,7 @@ fn handle_event(
                     },
                     Case {
                         id: "2".to_string(),
-                        location: shared::Coordinate { lat: 37.7849, lon: -122.4094 },
+                        location: Coordinate { lat: 37.7849, lon: -122.4094 },
                         description: "Cat stuck in tree".to_string(),
                         status: CaseStatus::Claimed,
                         severity: 2,
@@ -176,6 +178,12 @@ fn handle_event(
                     id: "1".to_string(),
                     name: "Sarah Chen".to_string(),
                     member_type: "Individual".to_string(),
+                    description: "Passionate rescuer with first aid kit.".to_string(),
+                    location_name: "Central Park".to_string(),
+                    phone: "+1234567890".to_string(),
+                    image_url: "https://i.pravatar.cc/150?u=sarah".to_string(),
+                    lat: 40.785091,
+                    lon: -73.968285,
                     karma: 150,
                     last_active: "2m ago".to_string(),
                 },
@@ -183,6 +191,12 @@ fn handle_event(
                     id: "2".to_string(),
                     name: "Marcus Johnson".to_string(),
                     member_type: "Vet".to_string(),
+                    description: "Licensed veterinarian, specializing in small animals.".to_string(),
+                    location_name: "Uptown Clinic".to_string(),
+                    phone: "+1234567891".to_string(),
+                    image_url: "https://i.pravatar.cc/150?u=marcus".to_string(),
+                    lat: 40.811550,
+                    lon: -73.946477,
                     karma: 320,
                     last_active: "5m ago".to_string(),
                 },
@@ -190,6 +204,12 @@ fn handle_event(
                     id: "3".to_string(),
                     name: "David Martinez".to_string(),
                     member_type: "NGO".to_string(),
+                    description: "Local NGO focusing on urban animal welfare.".to_string(),
+                    location_name: "West Side Shelter".to_string(),
+                    phone: "+1234567892".to_string(),
+                    image_url: "https://i.pravatar.cc/150?u=david".to_string(),
+                    lat: 40.771133,
+                    lon: -73.984139,
                     karma: 580,
                     last_active: "10m ago".to_string(),
                 },
@@ -248,7 +268,7 @@ fn handle_event(
 /// Emit ViewModel update to UI
 fn emit_view_model(app_handle: &AppHandle, state: &State<'_, AppInstanceState>) -> Result<(), String> {
     let view_model = state.view_model.lock().map_err(|e: std::sync::PoisonError<_>| e.to_string())?;
-    app_handle.emit("crux-update", &*view_model).map_err(|e| e.to_string())?;
+    app_handle.emit("state-update", &*view_model).map_err(|e| e.to_string())?;
     tracing::debug!("✅ Emitted ViewModel");
     Ok(())
 }

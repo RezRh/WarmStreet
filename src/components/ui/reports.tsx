@@ -1,31 +1,24 @@
 import { createSignal, For, Show } from 'solid-js';
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
+import {
+  Search,
+  MapPin,
+  Clock,
   Info,
   Stethoscope,
   Activity,
   Zap
 } from 'lucide-solid';
 
-interface Case {
-  id: string;
-  description: string;
-  status: string;
-  severity: 'Low' | 'Moderate' | 'High' | 'Critical';
-  type: string;
-  age: string;
-  breed: string;
-  imageUrl: string;
-  date: string;
+import { Case } from '../../lib/types';
+
+interface CaseReport extends Case {
   weight?: string;
   symptoms?: string[];
   confidence?: string;
 }
 
 interface ReportsPageProps {
-  cases: Case[];
+  cases: CaseReport[];
   onCaseSelect: (id: string) => void;
 }
 
@@ -144,7 +137,7 @@ export const ReportsPage = (props: ReportsPageProps) => {
               {/* Image Header */}
               <div class="relative h-64 overflow-hidden">
                 <img 
-                  src={item.imageUrl} 
+                  src={item.image_url} 
                   class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   alt={item.description}
                 />
@@ -154,12 +147,13 @@ export const ReportsPage = (props: ReportsPageProps) => {
                 
                 <div class="absolute top-4 left-4 flex gap-2">
                   <div class={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 backdrop-blur-xl border border-white/20 shadow-lg ${
-                    item.severity === 'Critical' ? 'bg-red-500/80 text-white' : 
-                    (item.severity === 'High' || item.severity === 'Moderate') ? 'bg-violet-600/80 text-white border-violet-400/20' : 
+                    item.severity >= 5 ? 'bg-red-500/80 text-white' : 
+                    item.severity === 4 ? 'bg-violet-600/80 text-white border-violet-400/20' : 
+                    item.severity === 3 ? 'bg-blue-600/80 text-white border-blue-400/20' :
                     'bg-zinc-800/80 text-zinc-300'
                   }`}>
                     <Activity class="w-3 h-3" />
-                    {item.severity}
+                    {item.severity >= 5 ? 'Critical' : item.severity === 4 ? 'High' : item.severity === 3 ? 'Moderate' : 'Low'}
                   </div>
                 </div>
 

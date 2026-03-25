@@ -1,6 +1,6 @@
 import { For, createSignal, onMount } from 'solid-js';
 import { Send, ArrowLeft } from 'lucide-solid';
-import { CommunityMember } from './community-page';
+import { CommunityMember } from '../../lib/types';
 
 interface Message {
   id: string;

@@ -9,60 +9,7 @@ import { account } from './lib/appwrite';
 import { ID, OAuthProvider } from 'appwrite';
 import './App.css';
 
-// ViewModel from Tauri Rust backend
-interface ViewModel {
-  // Client-side control
-  status: 'Loading' | 'Signup' | 'Login' | 'Unauthenticated' | 'Ready' | 'Error' | 'Authenticating' | 'MfaVerification';
-
-  // App state
-  feed_view: 'map' | 'list';
-  cases: Case[];
-  map_pins: MapPin[];
-  selected_case: Case | null;
-  is_refreshing: boolean;
-  error: string | null;
-  toast: string | null;
-  profile?: {
-    name: string;
-    email: string;
-    phone: string | null;
-    member_type: 'Individual' | 'NGO' | 'Vet';
-    karma: number;
-    rescues: number;
-    verification_level: string;
-  };
-  community_members: CommunityMember[];
-  is_loading_community: boolean;
-  active_chat_member: CommunityMember | null;
-}
-
-interface Case {
-  id: string;
-  description: string;
-  status: string;
-  severity: number;
-  type: string;
-  age?: string;
-  breed?: string;
-  image_url?: string;
-  created_at: string;
-}
-
-interface MapPin {
-  case_id: string;
-  lat: number;
-  lon: number;
-  severity: number;
-  status: string;
-}
-
-interface CommunityMember {
-  id: string;
-  name: string;
-  member_type: string;
-  karma: number;
-  last_active: string;
-}
+import { ViewModel } from './lib/types';
 
 const sampleTestimonials: Testimonial[] = [
   {
@@ -97,7 +44,7 @@ const initial_view_model: ViewModel = {
   community_members: [],
   is_loading_community: false,
   active_chat_member: null,
-  profile: undefined
+  profile: null
 };
 
 function App() {
@@ -155,8 +102,8 @@ function App() {
     }
 
     if (isTauri) {
-      const unlisten = listen('crux-update', (event: any) => {
-        console.log('✅ ViewModel update from Rust:', event.payload);
+      const unlisten = listen('state-update', (event: any) => {
+        console.log('✅ State update from Rust:', event.payload);
         set_view_model(event.payload);
       });
 
@@ -186,7 +133,7 @@ function App() {
         const member = initial_view_model.community_members.find(m => m.id === payload.member_id);
         set_view_model(prev => ({ 
           ...prev, 
-          active_chat_member: member 
+          active_chat_member: member || null 
         }));
       }
       
@@ -376,7 +323,7 @@ function App() {
         />
       </Show>
 
-      <Show when={view_model().state?.type === 'MfaVerification'}>
+      <Show when={view_model().status === 'MfaVerification'}>
         <MfaVerificationPage 
           onVerify={handleVerifyMfa}
           onCancel={() => {

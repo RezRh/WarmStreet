@@ -28,8 +28,8 @@ pub async fn show_map<R: Runtime>(
     }
 
     // On real mobile devices the Swift / Kotlin layer handles this command and
-    // emits the "map-ready" Tauri event.  On desktop we emit it ourselves so the
-    // Crux core still receives the MapReady event and sends initial pins.
+    // emits the "map-ready" Tauri event. On desktop we emit it ourselves so the
+    // backend still receives the MapReady event and sends initial pins.
     #[cfg(not(any(target_os = "ios", target_os = "android")))]
     {
         tracing::debug!("Desktop mode: emitting map-ready stub");

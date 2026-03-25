@@ -4,9 +4,9 @@
 // Bridges Tauri events to the Google Maps SDK for Android.
 // Google Maps SDK for Android is FREE for basic map display (no billing required).
 //
-// Architecture (Crux "dumb UI" pattern):
-//   Crux core → MapOperation effect → Tauri Rust shell → this plugin
-//   User taps pin → this plugin → Tauri "map-pin-tapped" event → Crux MapPinTapped event
+// Architecture:
+//   Tauri Backend (Rust) → MapOperation → this plugin
+//   User taps pin → this plugin → Tauri "map-pin-tapped" event → Backend MapPinTapped
 //
 // Prerequisites:
 //   1. Add `com.google.android.gms:play-services-maps` to android/app/build.gradle
@@ -176,7 +176,7 @@ class NativeMapPlugin(
             )
         }
 
-        // Forward marker taps to Crux.
+        // Forward marker taps to the backend.
         map.setOnMarkerClickListener { marker ->
             pinIds[marker]?.let { caseId -> onPinTapped(caseId) }
             false

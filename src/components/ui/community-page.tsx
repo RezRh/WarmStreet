@@ -1,17 +1,7 @@
 import { For, Show, createSignal } from 'solid-js';
 import { MapPin, Search, Info, Phone, MessageSquare } from 'lucide-solid';
 
-export interface CommunityMember {
-  id: string;
-  name: string;
-  member_type: 'Vet' | 'NGO';
-  description: string;
-  location_name: string;
-  phone: string;
-  image_url: string;
-  lat: number;
-  lon: number;
-}
+import { CommunityMember } from '../../lib/types';
 
 interface CommunityPageProps {
   members: CommunityMember[];
@@ -21,7 +11,7 @@ interface CommunityPageProps {
 }
 
 export const CommunityPage = (props: CommunityPageProps) => {
-  const [filter, setFilter] = createSignal<'All' | 'Vet' | 'NGO'>('All');
+  const [filter, setFilter] = createSignal<'All' | 'Vet' | 'NGO' | 'Individual'>('All');
   const [searchQuery, setSearchQuery] = createSignal('');
 
   const filteredMembers = () => {
@@ -73,7 +63,7 @@ export const CommunityPage = (props: CommunityPageProps) => {
 
         {/* Filter Chips */}
         <div class="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
-          <For each={['All', 'Vet', 'NGO'] as const}>
+          <For each={['All', 'Vet', 'NGO', 'Individual'] as const}>
             {(type) => (
               <button 
                 onClick={() => setFilter(type)}
@@ -83,7 +73,7 @@ export const CommunityPage = (props: CommunityPageProps) => {
                     : 'bg-zinc-900/50 border-white/5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
                 }`}
               >
-                {type === 'All' ? 'Everywhere' : type === 'Vet' ? 'Veterinarians' : 'NGO Shelters'}
+                {type === 'All' ? 'Everywhere' : type === 'Vet' ? 'Veterinarians' : type === 'NGO' ? 'NGO Shelters' : 'Rescuers'}
               </button>
             )}
           </For>

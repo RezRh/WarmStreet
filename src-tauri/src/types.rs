@@ -1,4 +1,4 @@
-// types.rs - Shared types without Crux dependencies
+// types.rs - Shared types
 // These types are used by the Tauri backend and shared with the frontend
 
 #![allow(clippy::module_name_repetitions)]
@@ -522,6 +522,12 @@ pub struct CommunityMember {
     pub id: String,
     pub name: String,
     pub member_type: String,
+    pub description: String,
+    pub location_name: String,
+    pub phone: String,
+    pub image_url: String,
+    pub lat: f64,
+    pub lon: f64,
     pub karma: i32,
     pub last_active: String,
 }

@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onMount } from "solid-js";
+import { createSignal } from "solid-js";
 
 type Theme = "light" | "dark" | "dim";
 

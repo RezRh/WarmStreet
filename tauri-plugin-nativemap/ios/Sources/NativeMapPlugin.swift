@@ -4,9 +4,9 @@
 // Bridges Tauri commands to Apple Maps (MKMapView).
 // This file is compiled by the Tauri iOS build system.
 //
-// Architecture (Crux "dumb UI" pattern):
-//   Crux core → MapOperation effect → Tauri Rust shell → this plugin
-//   User taps pin → this plugin → Tauri "map-pin-tapped" event → Crux MapPinTapped event
+// Architecture:
+//   Tauri Backend (Rust) → MapOperation → this plugin
+//   User taps pin → this plugin → "map-pin-tapped" event → Backend MapPinTapped
 
 import UIKit
 import MapKit
@@ -141,7 +141,7 @@ import WebKit
     }
 
     private func spanFromZoom(_ zoom: Double) -> MKCoordinateSpan {
-        // Convert a "zoom level" (Crux convention, similar to Google Maps zoom) to a delta.
+        // Convert a "zoom level" (Google Maps convention) to a delta.
         let delta = 360.0 / pow(2.0, zoom)
         return MKCoordinateSpan(latitudeDelta: delta, longitudeDelta: delta)
     }

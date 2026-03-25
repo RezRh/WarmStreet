@@ -1,30 +1,19 @@
 import { createSignal, For, Show, createEffect, onMount, onCleanup } from 'solid-js';
 import { Bell, MapPin, RefreshCcw } from 'lucide-solid';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
 import { LiquidNav } from './liquid-nav';
 import { ReportsPage } from './reports';
 import { CommunityPage } from './community-page';
 import { ChatInterface } from './chat';
 import { ProfilePage } from './profile';
 
-interface Case {
-  id: string;
-  description: string;
-  status: string;
-  severity: 'Low' | 'Moderate' | 'High' | 'Critical';
-  type: string;
-  age: string;
-  breed: string;
-  imageUrl: string;
-  date: string;
-}
+import { Case, CommunityMember } from '../../lib/types';
 
 interface HomePageProps {
   cases: Case[];
-  communityMembers: any[];
+  communityMembers: CommunityMember[];
   isLoadingCommunity: boolean;
-  activeChatMember: any | null;
+  activeChatMember: CommunityMember | null;
   onReport: () => void;
   onRefresh: () => void;
   onCaseSelect: (id: string) => void;
@@ -51,27 +40,12 @@ export const HomePage = (props: HomePageProps) => {
   
   onMount(() => {
     console.log('🗺️ home.tsx: onMount — triggering SwitchToMap');
-    // Tell Crux to switch to map mode, which triggers the shell to show the native view
     invoke('handle_event', { event: 'SwitchToMap' });
+  });
 
-    // Listen for pin taps from the native layer
-    const unlistenPin = listen('crux-map-pin-tapped', (event) => {
-      const caseId = event.payload as string;
-      console.log('📍 home.tsx: pin tapped:', caseId);
-      props.onCaseSelect(caseId);
-    });
-
-    // Listen for map ready to potentially trigger local UI updates
-    const unlistenReady = listen('crux-map-ready', () => {
-      console.log('🗺️ home.tsx: native map ready');
-    });
-
-    onCleanup(async () => {
-      console.log('🗺️ home.tsx: onCleanup — triggering SwitchToList');
-      invoke('handle_event', { event: 'SwitchToList' });
-      (await unlistenPin)();
-      (await unlistenReady)();
-    });
+  onCleanup(async () => {
+    console.log('🗺️ home.tsx: onCleanup — triggering SwitchToList');
+    invoke('handle_event', { event: 'SwitchToList' });
   });
 
   const radiusOptions = [1, 2, 5, 10];
@@ -191,13 +165,14 @@ export const HomePage = (props: HomePageProps) => {
                       class="snap-start min-w-[280px] bg-zinc-900/40 border border-white/5 rounded-[2rem] p-4 space-y-3 active:scale-[0.98] transition-all cursor-pointer backdrop-blur-md hover:bg-zinc-900/60 hover:border-white/10 group"
                     >
                       <div class="relative h-32 rounded-2xl overflow-hidden bg-zinc-800">
-                        <img src={item.imageUrl} alt={item.description} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <img src={item.image_url} alt={item.description} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                         <div class={`absolute top-3 right-3 px-3 py-1 backdrop-blur-md rounded-full border border-white/10 text-[10px] font-bold ${
-                          item.severity === 'High' || item.severity === 'Moderate' 
-                          ? 'bg-violet-600/80 text-white border-violet-400/30' 
-                          : 'bg-zinc-950/80 text-zinc-300'
+                          item.severity >= 5 ? 'bg-red-500/80 text-white border-red-400/30 shadow-[0_4px_12px_rgba(239,68,68,0.3)]' : 
+                          item.severity === 4 ? 'bg-violet-600/80 text-white border-violet-400/30' : 
+                          item.severity === 3 ? 'bg-blue-600/80 text-white border-blue-400/30' :
+                          'bg-zinc-950/80 text-zinc-300'
                         }`}>
-                          {item.severity}
+                          {item.severity >= 5 ? 'Critical' : item.severity === 4 ? 'High' : item.severity === 3 ? 'Moderate' : 'Low'}
                         </div>
                       </div>
                       <div class="px-1 space-y-1">
@@ -212,14 +187,16 @@ export const HomePage = (props: HomePageProps) => {
                             item.status === 'pending' ? 'bg-zinc-500/10 text-zinc-400 border border-white/10' :
                             item.status === 'claimed' || item.status === 'arrived' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
                             item.status === 'en_route' ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20' :
-                            item.status === 'resolved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            item.status === 'resolved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
+                            item.status === 'cancelled' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                            item.status === 'expired' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
                             'bg-zinc-500/10 text-zinc-400 border border-white/10'
                           }`}>
                             {item.status.replace('_', ' ')}
                           </div>
                           <div class="flex items-center gap-1 text-zinc-500 text-[10px] font-bold uppercase tracking-widest ml-auto">
                             <span class="opacity-60">Posted:</span>
-                            <span>{item.date}</span>
+                            <span>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
                         </div>
                       </div>
@@ -268,7 +245,7 @@ export const HomePage = (props: HomePageProps) => {
       {/* Chat Interface Overlay */}
       <Show when={props.activeChatMember}>
         <ChatInterface 
-          member={props.activeChatMember} 
+          member={props.activeChatMember!} 
           onClose={props.onCloseChat}
           onSendMessage={props.onSendMessage}
         />
