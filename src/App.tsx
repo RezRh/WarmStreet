@@ -1,5 +1,4 @@
 import { createSignal, onMount, Show } from 'solid-js';
-import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { SignInPage, Testimonial } from './components/ui/sign-in';
 import { VerificationPage } from './components/ui/verification';
@@ -10,6 +9,7 @@ import { ID, OAuthProvider } from 'appwrite';
 import './App.css';
 
 import { ViewModel } from './lib/types';
+import { initializeMessaging, cleanupMessaging } from './lib/messaging';
 
 const sampleTestimonials: Testimonial[] = [
   {
@@ -44,7 +44,8 @@ const initial_view_model: ViewModel = {
   community_members: [],
   is_loading_community: false,
   active_chat_member: null,
-  profile: null
+  profile: null,
+  conversations: []
 };
 
 function App() {
@@ -56,7 +57,7 @@ function App() {
 
   onMount(async () => {
     console.log('🏠 WarmStreet App mounting...');
-    
+
     // Check if we are in Tauri
     const isTauri = !!(window as any).__TAURI_INTERNALS__;
     console.log('Is Tauri environment:', isTauri);
@@ -66,89 +67,46 @@ function App() {
       const user = await account.get();
       console.log('✅ Appwrite session found:', user);
       setCurrentUser(user);
-      
+
       const prefs = user.prefs as any;
-      const member_type = (prefs?.user_type?.charAt(0).toUpperCase() + prefs?.user_type?.slice(1)) || 'Individual';
-      
-      const profileData = {
-        name: user.name,
-        email: user.email,
-        phone: user.phone || null,
-        member_type: member_type,
-        karma: prefs?.karma || 0,
-        rescues: prefs?.rescues || 0,
-        verification_level: prefs?.verification_level || 'Bronze'
-      };
-
-      if (isTauri) {
-        invoke('handle_event', { event: 'ProfileUpdated', payload: profileData })
-          .then(() => console.log('✅ ProfileUpdated dispatched'))
-          .catch(err => console.error('❌ Profile update failed:', err));
-      }
-
       if (!prefs || !prefs.user_type) {
         console.log('⚠️ Profile incomplete, needs verification');
         set_needs_verification(true);
       } else {
-        const session = await account.getSession('current');
-        dispatch('LoginCompleted', { 
-          jwt: session.$id, 
-          user_id: user.$id,
-          user_type: member_type.toLowerCase()
-        });
+        // Initialize E2E encrypted messaging
+        initializeMessaging()
+          .then(() => console.log('✅ Messaging initialized'))
+          .catch(err => console.error('❌ Messaging init failed:', err));
+
+        // Set status to Ready
+        set_view_model(prev => ({ ...prev, status: 'Ready' }));
       }
     } catch (err) {
       console.log('ℹ️ No active session');
     }
 
     if (isTauri) {
-      const unlisten = listen('state-update', (event: any) => {
-        console.log('✅ State update from Rust:', event.payload);
-        set_view_model(event.payload);
+      // Listen for native map events
+      const unlistenMapPin = listen('map-pin-tapped', (event: any) => {
+        console.log('📍 Map pin tapped:', event.payload);
+        // Handle map pin tap - select the case
+        const caseId = event.payload;
+        set_view_model(prev => ({
+          ...prev,
+          selected_case: prev.cases.find(c => c.id === caseId) || null,
+        }));
       });
 
-      invoke('handle_event', { event: 'AppStarted' })
-        .then(() => console.log('✅ AppStarted dispatched'))
-        .catch(err => console.error('❌ Dispatch failed:', err));
+      const unlistenMapReady = listen('map-ready', () => {
+        console.log('🗺️ Native map ready');
+      });
 
-      return () => unlisten.then(f => f());
-    } else {
-      console.warn('⚠️ Running in browser: Tauri features disabled');
+      return () => {
+        unlistenMapPin.then(f => f());
+        unlistenMapReady.then(f => f());
+      };
     }
   });
-
-  const dispatch = (event: string, payload?: any) => {
-    console.log('📤 Dispatch:', event, payload);
-    
-    // Check if we are in Tauri
-    const isTauri = !!(window as any).__TAURI_INTERNALS__;
-    
-    if (isTauri) {
-      invoke('handle_event', { event, payload });
-    } else {
-      console.warn('⚠️ Browser Mock Dispatch:', event, payload);
-      
-      // Mock Direct Chat for Browser Testing
-      if (event === 'MessageMemberRequested') {
-        const member = initial_view_model.community_members.find(m => m.id === payload.member_id);
-        set_view_model(prev => ({ 
-          ...prev, 
-          active_chat_member: member || null 
-        }));
-      }
-      
-      if (event === 'ChatClosed') {
-        set_view_model(prev => ({ 
-          ...prev, 
-          active_chat_member: null 
-        }));
-      }
-    // Simulate state transitions for browser testing if needed
-      if (event === 'OnboardingComplete') {
-        set_view_model(prev => ({ ...prev, status: 'Ready' }));
-      }
-    }
-  };
 
   const handleSignIn = async (e: Event) => {
     e.preventDefault();
@@ -164,7 +122,7 @@ function App() {
         console.log('🛡️ MFA required');
         const challenge = await (account as any).createMfaChallenge('totp'); // Default to TOTP, can fallback to email
         set_mfa_challenge_id(challenge.$id);
-        dispatch('MfaRequired', { challenge_id: challenge.$id });
+        set_view_model(prev => ({ ...prev, status: 'MfaVerification' }));
         return;
       }
 
@@ -177,11 +135,7 @@ function App() {
         return;
       }
 
-      dispatch('LoginCompleted', { 
-        jwt: session.$id, 
-        user_id: user.$id,
-        metadata: prefs
-      });
+      set_view_model(prev => ({ ...prev, status: 'Ready' }));
     } catch (err: any) {
       console.error('❌ Sign In failed:', err);
       set_view_model(prev => ({ ...prev, error: err.message }));
@@ -196,7 +150,6 @@ function App() {
       await (account as any).updateMfaChallenge(challenge_id, code);
       console.log('✅ MFA verified');
       
-      const session = await account.getSession('current');
       const user = await account.get();
       
       const prefs = user.prefs as any;
@@ -206,11 +159,7 @@ function App() {
         return;
       }
 
-      dispatch('LoginCompleted', { 
-        jwt: session.$id, 
-        user_id: user.$id,
-        metadata: prefs
-      });
+      set_view_model(prev => ({ ...prev, status: 'Ready' }));
       set_mfa_challenge_id(null);
     } catch (err: any) {
       console.error('❌ MFA verification failed:', err);
@@ -227,8 +176,7 @@ function App() {
     try {
       const userType = formData.get('user_type') as string;
       await account.create(ID.unique(), email, password, name);
-      const session = await account.createEmailPasswordSession(email, password);
-      const user = await account.get();
+      await account.createEmailPasswordSession(email, password);
       console.log('📝 Sign Up success as', userType);
       
       const metadata: any = { user_type: userType };
@@ -245,11 +193,7 @@ function App() {
       // Persist to Appwrite prefs so it's available after social logins/re-logins
       await account.updatePrefs(metadata);
 
-      dispatch('LoginCompleted', { 
-        jwt: session.$id, 
-        user_id: user.$id,
-        metadata
-      });
+      set_view_model(prev => ({ ...prev, status: 'Ready' }));
     } catch (err: any) {
       console.error('❌ Sign Up failed:', err);
       set_view_model(prev => ({ ...prev, error: err.message }));
@@ -268,7 +212,6 @@ function App() {
 
   const handleResetPassword = () => {
     console.log('🔑 Reset Password clicked');
-    dispatch('ResetPasswordRequested');
   };
 
   const handleCreateAccount = () => {
@@ -278,20 +221,14 @@ function App() {
 
   const handleContinueAsGuest = () => {
     console.log('👤 Continue as Guest clicked');
-    dispatch('OnboardingComplete');
+    set_view_model(prev => ({ ...prev, status: 'Ready' }));
   };
 
   const handleVerificationComplete = async (metadata: any) => {
     console.log('✅ Verification complete:', metadata);
     try {
-      const user = await account.get();
-      const session = await account.getSession('current');
       set_needs_verification(false);
-      dispatch('LoginCompleted', { 
-        jwt: session.$id, 
-        user_id: user.$id,
-        metadata
-      });
+      set_view_model(prev => ({ ...prev, status: 'Ready' }));
     } catch (err) {
       console.error('❌ Failed to finalize login after verification:', err);
     }
@@ -300,9 +237,11 @@ function App() {
   const handleSignOut = async () => {
     console.log('🚪 Sign Out clicked');
     try {
+      // Clean up messaging encryption keys
+      await cleanupMessaging();
+
       await account.deleteSession('current');
-      set_view_model(prev => ({ ...prev, status: 'Signup' })); // or initial status
-      dispatch('LogoutRequested');
+      set_view_model(prev => ({ ...prev, status: 'Unauthenticated' }));
       set_auth_mode('signin');
     } catch (err: any) {
       console.error('❌ Sign Out failed:', err);
@@ -324,11 +263,13 @@ function App() {
       </Show>
 
       <Show when={view_model().status === 'MfaVerification'}>
-        <MfaVerificationPage 
+        <MfaVerificationPage
           onVerify={handleVerifyMfa}
           onCancel={() => {
             set_mfa_challenge_id(null);
-            dispatch('LogoutRequested', {});
+            // Logout - clean up messaging and session
+            cleanupMessaging();
+            set_view_model(prev => ({ ...prev, status: 'Unauthenticated' }));
           }}
         />
       </Show>
@@ -341,12 +282,27 @@ function App() {
           isLoadingCommunity={view_model().is_loading_community}
           activeChatMember={view_model().active_chat_member}
           profile={view_model().profile}
-          onReport={() => dispatch('ReportSpotted')}
-          onRefresh={() => console.log('Refresh clicked')}
-          onCaseSelect={(id) => dispatch('CaseSelected', { case_id: id })}
-          onMessageMember={(id) => dispatch('MessageMemberRequested', { member_id: id })}
-          onCloseChat={() => dispatch('ChatClosed')}
-          onSendMessage={(text) => console.log('Message sent:', text)}
+          onReport={() => console.log('📸 Report spotted clicked')}
+          onRefresh={() => console.log('🔄 Refresh clicked')}
+          onCaseSelect={(id) => {
+            console.log('📍 Case selected:', id);
+            set_view_model(prev => ({
+              ...prev,
+              selected_case: prev.cases.find(c => c.id === id) || null,
+            }));
+          }}
+          onMessageMember={(id) => {
+            console.log('💬 Message member:', id);
+            const member = view_model().community_members.find(m => m.id === id);
+            set_view_model(prev => ({
+              ...prev,
+              active_chat_member: member || null,
+            }));
+          }}
+          onCloseChat={() => {
+            console.log('❌ Chat closed');
+            set_view_model(prev => ({ ...prev, active_chat_member: null }));
+          }}
           onSignOut={handleSignOut}
         />
       ) : (

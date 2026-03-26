@@ -19,7 +19,6 @@ interface HomePageProps {
   onCaseSelect: (id: string) => void;
   onMessageMember: (id: string) => void;
   onCloseChat: () => void;
-  onSendMessage: (text: string) => void;
   onSignOut: () => void;
   user: any;
   profile?: any;
@@ -244,10 +243,9 @@ export const HomePage = (props: HomePageProps) => {
 
       {/* Chat Interface Overlay */}
       <Show when={props.activeChatMember}>
-        <ChatInterface 
-          member={props.activeChatMember!} 
+        <ChatInterface
+          member={props.activeChatMember!}
           onClose={props.onCloseChat}
-          onSendMessage={props.onSendMessage}
         />
       </Show>
 

@@ -27,22 +27,6 @@ tauri-plugin-shell = "2.0"
 tauri-plugin-nativemap = { path = "../tauri-plugin-nativemap" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "sync"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-chrono = { version = "0.4", features = ["serde"] }
-geo = { version = "0.28", features = ["serde"] }
-uuid = { version = "1.7", features = ["v4", "serde"] }
-thiserror = "1.0"
-image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
-url = "2.5"
-async-trait = "0.1"
-lru = "0.12"
-getrandom = { version = "0.2" }
-chacha20poly1305 = "0.10"
-aead = "0.5"
-secrecy = { version = "0.8", features = ["serde"] }
-zeroize = "1.7"
-chrono-humanize = "0.2"
-ort = { version = "2.0.0-rc.12", features = ["download-binaries"] }
-ndarray = "0.17"
+tauri-plugin-stronghold = "2"

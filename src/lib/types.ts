@@ -42,6 +42,30 @@ export interface MapPin {
   status: string;
 }
 
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  receiver_id: string;
+  encrypted_content: string;
+  nonce?: string;
+  signature?: string;
+  decrypted_content?: string;
+  created_at: string;
+  read: boolean;
+  sender_name: string;
+  sender_avatar?: string;
+}
+
+export interface Conversation {
+  id: string;
+  participant_ids: string[];
+  participants: CommunityMember[];
+  last_message?: Message;
+  unread_count: number;
+  updated_at: string;
+}
+
 export interface ViewModel {
   status: string;
   feed_view: 'map' | 'list';
@@ -55,4 +79,6 @@ export interface ViewModel {
   community_members: CommunityMember[];
   is_loading_community: boolean;
   active_chat_member: CommunityMember | null;
+  conversations: Conversation[];
+  current_conversation?: Conversation;
 }
