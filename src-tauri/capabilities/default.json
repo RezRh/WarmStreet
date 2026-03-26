@@ -31,6 +31,7 @@
     "camera:default",
     "camera:allow-permission-state",
     "camera:allow-request-permission",
+    "nativemap:default",
     "stronghold:default"
   ],
   "platforms": ["linux", "macOS", "windows", "android", "iOS"]
