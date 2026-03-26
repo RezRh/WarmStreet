@@ -2,12 +2,36 @@
   "$schema": "https://schema.tauri.app/config/2",
   "identifier": "default",
   "description": "Default capabilities for WarmStreet",
-  "windows": [
-    "*"
-  ],
+  "windows": ["*"],
   "permissions": [
     "core:default",
+    "core:window:default",
+    "core:window:allow-close",
+    "core:window:allow-maximize",
+    "core:window:allow-minimize",
+    "core:window:allow-resize",
+    "core:window:allow-start-dragging",
+    "shell:default",
     "shell:allow-open",
+    "http:default",
+    "http:allow-fetch",
+    "http:allow-fetch-send",
+    "fs:default",
+    "fs:allow-read",
+    "fs:allow-write",
+    "fs:allow-exists",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "notification:default",
+    "notification:allow-request-permission",
+    "notification:allow-is-permission-granted",
+    "geolocation:default",
+    "geolocation:allow-get-current-position",
+    "camera:default",
+    "camera:allow-permission-state",
+    "camera:allow-request-permission",
     "stronghold:default"
-  ]
+  ],
+  "platforms": ["linux", "macOS", "windows", "android", "iOS"]
 }

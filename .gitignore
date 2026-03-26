@@ -35,3 +35,6 @@ worker-configuration.d.ts
 .idea/
 *.swp
 *.swo
+
+# Android/Gradle
+.gradle/
